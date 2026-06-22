@@ -221,20 +221,76 @@ async function runChecks(domains, options = {}) {
     const rdapRegistered = rdapResolved.filter(r => r.result.registered).length;
     console.log(`[RDAP] Complete. Resolved: ${rdapResolved.length} (available: ${rdapAvailable}, registered: ${rdapRegistered}), No data: ${needWhois.length}`);
 
-    // Stage 3: WHOIS for domains where RDAP returned no data
+    // Stage 3: WHOIS for domains where RDAP returned no data (per-TLD concurrency)
     const whoisSkipCount = needWhois.filter(d => whoisUnsupported.has(d.tld)).length;
-    console.log(`[WHOIS] Starting: ${needWhois.length} domains (skip: ${whoisSkipCount}, check: ${needWhois.length - whoisSkipCount})`);
+    const whoisConcurrency = options.whoisConcurrency || 10;
+    console.log(`[WHOIS] Starting: ${needWhois.length} domains (skip: ${whoisSkipCount}, check: ${needWhois.length - whoisSkipCount}, TLD concurrency: ${whoisConcurrency})`);
 
     let whoisChecked = 0;
     let whoisSuccess = 0;
     let whoisFailed = 0;
 
+    // Handle unsupported TLDs immediately
     for (const item of needWhois) {
-        let whoisResult = null;
-
         if (whoisUnsupported.has(item.tld)) {
-            whoisResult = { registered: null, detail: 'WHOIS: TLD not supported' };
             whoisFailed++;
+            whoisChecked++;
+            results.push({
+                domain: item.domain,
+                sld: item.sld,
+                tld: item.tld,
+                sldLength: item.sld.length,
+                tldLength: item.tld.length,
+                mode: item.mode || 'mixed',
+                dnsExists: false,
+                whois: { registered: null, detail: 'WHOIS: TLD not supported' },
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    // Group remaining domains by TLD
+    const tldGroups = new Map();
+    for (const item of needWhois) {
+        if (whoisUnsupported.has(item.tld)) continue;
+        if (!tldGroups.has(item.tld)) tldGroups.set(item.tld, []);
+        tldGroups.get(item.tld).push(item);
+    }
+
+    // Process each TLD group as a sequential queue, run groups concurrently
+    async function processTldGroup(items) {
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            let whoisResult = null;
+            let tldNotSupported = false;
+
+            for (let attempt = 1; attempt <= whoisRetries; attempt++) {
+                try {
+                    whoisResult = await checkWHOIS(item.domain);
+                    if (whoisResult !== null) {
+                        whoisSuccess++;
+                        break;
+                    }
+                } catch (err) {
+                    if (err.message && err.message.includes('not supported')) {
+                        tldNotSupported = true;
+                        break;
+                    }
+                    if (attempt < whoisRetries) {
+                        const backoff = attempt * 3000;
+                        await new Promise(r => setTimeout(r, backoff));
+                    }
+                }
+            }
+
+            if (tldNotSupported) {
+                whoisResult = { registered: null, detail: 'WHOIS: TLD not supported' };
+                whoisFailed++;
+            } else if (whoisResult === null) {
+                whoisResult = { registered: null, detail: 'WHOIS: check failed' };
+                whoisFailed++;
+            }
+
             whoisChecked++;
             results.push({
                 domain: item.domain,
@@ -247,56 +303,26 @@ async function runChecks(domains, options = {}) {
                 whois: whoisResult,
                 timestamp: new Date().toISOString()
             });
-            continue;
-        }
 
-        let tldNotSupported = false;
-
-        for (let attempt = 1; attempt <= whoisRetries; attempt++) {
-            try {
-                whoisResult = await checkWHOIS(item.domain);
-                if (whoisResult !== null) {
-                    whoisSuccess++;
-                    break;
-                }
-            } catch (err) {
-                if (err.message && err.message.includes('not supported')) {
-                    tldNotSupported = true;
-                    break;
-                }
-                if (attempt < whoisRetries) {
-                    const backoff = attempt * 3000;
-                    await new Promise(r => setTimeout(r, backoff));
-                }
+            if (i < items.length - 1) {
+                await new Promise(r => setTimeout(r, whoisDelay));
             }
         }
+    }
 
-        if (tldNotSupported) {
-            whoisResult = { registered: null, detail: 'WHOIS: TLD not supported' };
-            whoisFailed++;
-        } else if (whoisResult === null) {
-            whoisResult = { registered: null, detail: 'WHOIS: check failed' };
-            whoisFailed++;
-        }
+    const groupEntries = [...tldGroups.values()];
+    const activeGroups = new Set();
 
-        whoisChecked++;
+    for (const group of groupEntries) {
+        const p = processTldGroup(group);
+        activeGroups.add(p);
+        p.finally(() => activeGroups.delete(p));
 
-        results.push({
-            domain: item.domain,
-            sld: item.sld,
-            tld: item.tld,
-            sldLength: item.sld.length,
-            tldLength: item.tld.length,
-            mode: item.mode || 'mixed',
-            dnsExists: false,
-            whois: whoisResult,
-            timestamp: new Date().toISOString()
-        });
-
-        if (whoisChecked < needWhois.length) {
-            await new Promise(r => setTimeout(r, whoisDelay));
+        if (activeGroups.size >= whoisConcurrency) {
+            await Promise.race(activeGroups);
         }
     }
+    await Promise.all(activeGroups);
 
     console.log(`[WHOIS] Complete. Checked: ${whoisChecked}, Success: ${whoisSuccess}, Failed: ${whoisFailed}`);
 
