@@ -219,5 +219,6 @@ tlds:
 scanner:
   dnsConcurrency: 50
   rdapConcurrency: 20
-  whoisDelay: 2000
+  whoisConcurrency: 10
+  whoisDelay: 500
   whoisRetries: 3

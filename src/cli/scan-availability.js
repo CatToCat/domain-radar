@@ -53,6 +53,7 @@ async function main() {
     const results = await runChecks(domainsData.domains, {
         dnsConcurrency: config.scanner.dnsConcurrency,
         rdapConcurrency: config.scanner.rdapConcurrency,
+        whoisConcurrency: config.scanner.whoisConcurrency,
         whoisDelay: config.scanner.whoisDelay,
         whoisRetries: config.scanner.whoisRetries,
         tldCache
