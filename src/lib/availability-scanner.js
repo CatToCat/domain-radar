@@ -101,14 +101,14 @@ async function checkWHOIS(domain) {
 }
 
 async function runChecks(domains, options = {}) {
-    const { dnsConcurrency = 50, rdapConcurrency = 20, whoisDelay = 2000, whoisRetries = 3, logger, tldCache = {} } = options;
+    const { dnsConcurrency = 50, rdapConcurrency = 20, whoisDelay = 2000, whoisRetries = 3, tldCache = {} } = options;
     const results = [];
 
     const rdapUnsupported = new Set(tldCache.rdapUnsupported || []);
     const whoisUnsupported = new Set(tldCache.whoisUnsupported || []);
 
     // Stage 1: DNS bulk check
-    logger?.info(`DNS check starting: ${domains.length} domains (concurrency: ${dnsConcurrency})`);
+    console.log(`[DNS] Starting: ${domains.length} domains (concurrency: ${dnsConcurrency})`);
 
     const dnsResults = new Map();
     const executing = new Set();
@@ -119,7 +119,6 @@ async function runChecks(domains, options = {}) {
             const exists = await checkDNS(item.domain);
             dnsResults.set(item.domain, exists);
             dnsChecked++;
-            logger?.info(`DNS [${dnsChecked}/${domains.length}] ${item.domain} → ${exists ? 'EXISTS' : 'NOT FOUND'}`);
         })();
 
         executing.add(p);
@@ -132,10 +131,7 @@ async function runChecks(domains, options = {}) {
     await Promise.all(executing);
 
     const dnsExistsCount = [...dnsResults.values()].filter(Boolean).length;
-    if (logger) {
-        logger.info(`DNS check complete. Exists: ${dnsExistsCount}, Not found: ${domains.length - dnsExistsCount}`);
-        logger.stats.dnsChecked = domains.length;
-    }
+    console.log(`[DNS] Complete. Exists: ${dnsExistsCount}, Not found: ${domains.length - dnsExistsCount}`);
 
     // Add DNS-exists domains to results
     for (const item of domains) {
@@ -156,7 +152,8 @@ async function runChecks(domains, options = {}) {
 
     // Stage 2: RDAP for domains where DNS returned false
     const needRdap = domains.filter(d => !dnsResults.get(d.domain));
-    logger?.info(`RDAP check starting: ${needRdap.length} domains (concurrency: ${rdapConcurrency})`);
+    const rdapSkipCount = needRdap.filter(d => rdapUnsupported.has(d.tld)).length;
+    console.log(`[RDAP] Starting: ${needRdap.length} domains (skip: ${rdapSkipCount}, check: ${needRdap.length - rdapSkipCount}, concurrency: ${rdapConcurrency})`);
 
     const rdapResults = new Map();
     const rdapExecuting = new Set();
@@ -165,14 +162,13 @@ async function runChecks(domains, options = {}) {
     try {
         await loadRdapBootstrap();
     } catch (err) {
-        logger?.info(`RDAP bootstrap failed: ${err.message}, skipping RDAP stage`);
+        console.log(`[RDAP] Bootstrap failed: ${err.message}, skipping RDAP stage`);
     }
 
     for (const item of needRdap) {
         if (rdapUnsupported.has(item.tld)) {
             rdapResults.set(item.domain, null);
             rdapChecked++;
-            logger?.info(`RDAP [${rdapChecked}/${needRdap.length}] ${item.domain} → SKIPPED (cached)`);
             continue;
         }
 
@@ -183,8 +179,6 @@ async function runChecks(domains, options = {}) {
             } catch {}
             rdapResults.set(item.domain, result);
             rdapChecked++;
-            const status = result === null ? 'NO DATA' : result.registered ? 'REGISTERED' : 'AVAILABLE';
-            logger?.info(`RDAP [${rdapChecked}/${needRdap.length}] ${item.domain} → ${status}`);
         })();
 
         rdapExecuting.add(p);
@@ -223,15 +217,13 @@ async function runChecks(domains, options = {}) {
         });
     }
 
-    if (logger) {
-        const rdapAvailable = rdapResolved.filter(r => !r.result.registered).length;
-        const rdapRegistered = rdapResolved.filter(r => r.result.registered).length;
-        logger.info(`RDAP complete. Resolved: ${rdapResolved.length} (available: ${rdapAvailable}, registered: ${rdapRegistered}), No data: ${needWhois.length}`);
-        logger.stats.rdapChecked = needRdap.length;
-    }
+    const rdapAvailable = rdapResolved.filter(r => !r.result.registered).length;
+    const rdapRegistered = rdapResolved.filter(r => r.result.registered).length;
+    console.log(`[RDAP] Complete. Resolved: ${rdapResolved.length} (available: ${rdapAvailable}, registered: ${rdapRegistered}), No data: ${needWhois.length}`);
 
     // Stage 3: WHOIS for domains where RDAP returned no data
-    logger?.info(`WHOIS check starting: ${needWhois.length} domains`);
+    const whoisSkipCount = needWhois.filter(d => whoisUnsupported.has(d.tld)).length;
+    console.log(`[WHOIS] Starting: ${needWhois.length} domains (skip: ${whoisSkipCount}, check: ${needWhois.length - whoisSkipCount})`);
 
     let whoisChecked = 0;
     let whoisSuccess = 0;
@@ -244,7 +236,6 @@ async function runChecks(domains, options = {}) {
             whoisResult = { registered: null, detail: 'WHOIS: TLD not supported' };
             whoisFailed++;
             whoisChecked++;
-            logger?.info(`WHOIS [${whoisChecked}/${needWhois.length}] ${item.domain} → SKIPPED (cached)`);
             results.push({
                 domain: item.domain,
                 sld: item.sld,
@@ -275,7 +266,6 @@ async function runChecks(domains, options = {}) {
                 }
                 if (attempt < whoisRetries) {
                     const backoff = attempt * 3000;
-                    logger?.info(`WHOIS retry ${attempt}/${whoisRetries} for ${item.domain}: ${err.message}`);
                     await new Promise(r => setTimeout(r, backoff));
                 }
             }
@@ -290,8 +280,6 @@ async function runChecks(domains, options = {}) {
         }
 
         whoisChecked++;
-        const status = whoisResult.registered === null ? 'UNKNOWN' : whoisResult.registered === false ? 'AVAILABLE' : 'REGISTERED';
-        logger?.info(`WHOIS [${whoisChecked}/${needWhois.length}] ${item.domain} → ${status}`);
 
         results.push({
             domain: item.domain,
@@ -310,12 +298,7 @@ async function runChecks(domains, options = {}) {
         }
     }
 
-    if (logger) {
-        logger.stats.whoisChecked = whoisChecked;
-        logger.stats.success = whoisSuccess;
-        logger.stats.failed = whoisFailed;
-        logger.stats.total = domains.length;
-    }
+    console.log(`[WHOIS] Complete. Checked: ${whoisChecked}, Success: ${whoisSuccess}, Failed: ${whoisFailed}`);
 
     return results;
 }

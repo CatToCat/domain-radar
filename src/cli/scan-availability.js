@@ -2,13 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 const { runChecks } = require('../lib/availability-scanner');
-const { Logger } = require('../lib/scan-logger');
 const { notify } = require('../lib/short-domain-notifier');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, 'config.yaml');
 const RESULTS_DIR = path.join(ROOT, 'public', 'results');
-const LOGS_DIR = path.join(ROOT, 'public', 'logs');
 const DOMAINS_PATH = path.join(RESULTS_DIR, 'domains.json');
 const MANIFEST_PATH = path.join(RESULTS_DIR, 'manifest.json');
 const TLD_CACHE_PATH = path.join(ROOT, 'data', 'tld-cache.json');
@@ -38,7 +36,6 @@ async function main() {
 
     const domainsData = JSON.parse(fs.readFileSync(DOMAINS_PATH, 'utf8'));
     const config = yaml.load(fs.readFileSync(CONFIG_PATH, 'utf8'));
-    const logger = new Logger(LOGS_DIR);
 
     // Load TLD cache
     let tldCache = { rdapUnsupported: [], whoisUnsupported: [] };
@@ -48,11 +45,9 @@ async function main() {
         } catch {}
     }
 
+    const startTime = new Date();
     console.log(`Loaded ${domainsData.domains.length} domains (generated at ${domainsData.generatedAt})`);
     console.log(`TLD cache: ${tldCache.rdapUnsupported.length} RDAP unsupported, ${tldCache.whoisUnsupported.length} WHOIS unsupported`);
-    logger.info(`Check starting: ${domainsData.domains.length} domains`);
-    logger.info(`Config: SLD≤${domainsData.config.sldLength}, mode=${domainsData.config.sldMode}, TLDs=${domainsData.config.tldCount}`);
-    logger.info(`TLD cache: ${tldCache.rdapUnsupported.length} RDAP unsupported, ${tldCache.whoisUnsupported.length} WHOIS unsupported`);
 
     // Run checks
     const results = await runChecks(domainsData.domains, {
@@ -60,7 +55,6 @@ async function main() {
         rdapConcurrency: config.scanner.rdapConcurrency,
         whoisDelay: config.scanner.whoisDelay,
         whoisRetries: config.scanner.whoisRetries,
-        logger,
         tldCache
     });
 
@@ -83,7 +77,7 @@ async function main() {
             registered: registeredCount,
             error: errorCount
         },
-        startTime: logger.startTime.toISOString(),
+        startTime: startTime.toISOString(),
         endTime: now.toISOString(),
         results
     };
@@ -102,10 +96,7 @@ async function main() {
         summary: output.summary
     });
 
-    // Finish
-    const logResult = logger.finish();
     console.log(`\nDone! Results: public/results/${filename}`);
-    console.log(`Log: public/logs/${logResult.filename}`);
     console.log(`Total: ${results.length} | Available: ${availableCount} | Registered: ${registeredCount} | DNS Exists: ${dnsExistsCount} | Error: ${errorCount}`);
 
     // Notify if short domains are available
