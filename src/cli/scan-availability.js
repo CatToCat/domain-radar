@@ -11,6 +11,7 @@ const RESULTS_DIR = path.join(ROOT, 'public', 'results');
 const LOGS_DIR = path.join(ROOT, 'public', 'logs');
 const DOMAINS_PATH = path.join(RESULTS_DIR, 'domains.json');
 const MANIFEST_PATH = path.join(RESULTS_DIR, 'manifest.json');
+const TLD_CACHE_PATH = path.join(ROOT, 'data', 'tld-cache.json');
 
 function formatDatetime(date) {
     const pad = (n) => String(n).padStart(2, '0');
@@ -39,9 +40,19 @@ async function main() {
     const config = yaml.load(fs.readFileSync(CONFIG_PATH, 'utf8'));
     const logger = new Logger(LOGS_DIR);
 
+    // Load TLD cache
+    let tldCache = { rdapUnsupported: [], whoisUnsupported: [] };
+    if (fs.existsSync(TLD_CACHE_PATH)) {
+        try {
+            tldCache = JSON.parse(fs.readFileSync(TLD_CACHE_PATH, 'utf8'));
+        } catch {}
+    }
+
     console.log(`Loaded ${domainsData.domains.length} domains (generated at ${domainsData.generatedAt})`);
+    console.log(`TLD cache: ${tldCache.rdapUnsupported.length} RDAP unsupported, ${tldCache.whoisUnsupported.length} WHOIS unsupported`);
     logger.info(`Check starting: ${domainsData.domains.length} domains`);
     logger.info(`Config: SLD≤${domainsData.config.sldLength}, mode=${domainsData.config.sldMode}, TLDs=${domainsData.config.tldCount}`);
+    logger.info(`TLD cache: ${tldCache.rdapUnsupported.length} RDAP unsupported, ${tldCache.whoisUnsupported.length} WHOIS unsupported`);
 
     // Run checks
     const results = await runChecks(domainsData.domains, {
@@ -49,7 +60,8 @@ async function main() {
         rdapConcurrency: config.scanner.rdapConcurrency,
         whoisDelay: config.scanner.whoisDelay,
         whoisRetries: config.scanner.whoisRetries,
-        logger
+        logger,
+        tldCache
     });
 
     // Build output

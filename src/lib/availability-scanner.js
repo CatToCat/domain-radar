@@ -101,8 +101,11 @@ async function checkWHOIS(domain) {
 }
 
 async function runChecks(domains, options = {}) {
-    const { dnsConcurrency = 50, rdapConcurrency = 20, whoisDelay = 2000, whoisRetries = 3, logger } = options;
+    const { dnsConcurrency = 50, rdapConcurrency = 20, whoisDelay = 2000, whoisRetries = 3, logger, tldCache = {} } = options;
     const results = [];
+
+    const rdapUnsupported = new Set(tldCache.rdapUnsupported || []);
+    const whoisUnsupported = new Set(tldCache.whoisUnsupported || []);
 
     // Stage 1: DNS bulk check
     logger?.info(`DNS check starting: ${domains.length} domains (concurrency: ${dnsConcurrency})`);
@@ -166,6 +169,13 @@ async function runChecks(domains, options = {}) {
     }
 
     for (const item of needRdap) {
+        if (rdapUnsupported.has(item.tld)) {
+            rdapResults.set(item.domain, null);
+            rdapChecked++;
+            logger?.info(`RDAP [${rdapChecked}/${needRdap.length}] ${item.domain} → SKIPPED (cached)`);
+            continue;
+        }
+
         const p = (async () => {
             let result = null;
             try {
@@ -230,6 +240,27 @@ async function runChecks(domains, options = {}) {
     for (const item of needWhois) {
         let whoisResult = null;
 
+        if (whoisUnsupported.has(item.tld)) {
+            whoisResult = { registered: null, detail: 'WHOIS: TLD not supported' };
+            whoisFailed++;
+            whoisChecked++;
+            logger?.info(`WHOIS [${whoisChecked}/${needWhois.length}] ${item.domain} → SKIPPED (cached)`);
+            results.push({
+                domain: item.domain,
+                sld: item.sld,
+                tld: item.tld,
+                sldLength: item.sld.length,
+                tldLength: item.tld.length,
+                mode: item.mode || 'mixed',
+                dnsExists: false,
+                whois: whoisResult,
+                timestamp: new Date().toISOString()
+            });
+            continue;
+        }
+
+        let tldNotSupported = false;
+
         for (let attempt = 1; attempt <= whoisRetries; attempt++) {
             try {
                 whoisResult = await checkWHOIS(item.domain);
@@ -238,6 +269,10 @@ async function runChecks(domains, options = {}) {
                     break;
                 }
             } catch (err) {
+                if (err.message && err.message.includes('not supported')) {
+                    tldNotSupported = true;
+                    break;
+                }
                 if (attempt < whoisRetries) {
                     const backoff = attempt * 3000;
                     logger?.info(`WHOIS retry ${attempt}/${whoisRetries} for ${item.domain}: ${err.message}`);
@@ -246,13 +281,16 @@ async function runChecks(domains, options = {}) {
             }
         }
 
-        if (whoisResult === null) {
-            whoisResult = { registered: false, detail: 'Not found in DNS/RDAP/WHOIS (available)' };
+        if (tldNotSupported) {
+            whoisResult = { registered: null, detail: 'WHOIS: TLD not supported' };
+            whoisFailed++;
+        } else if (whoisResult === null) {
+            whoisResult = { registered: null, detail: 'WHOIS: check failed' };
             whoisFailed++;
         }
 
         whoisChecked++;
-        const status = whoisResult.registered === false ? 'AVAILABLE' : 'REGISTERED';
+        const status = whoisResult.registered === null ? 'UNKNOWN' : whoisResult.registered === false ? 'AVAILABLE' : 'REGISTERED';
         logger?.info(`WHOIS [${whoisChecked}/${needWhois.length}] ${item.domain} → ${status}`);
 
         results.push({
