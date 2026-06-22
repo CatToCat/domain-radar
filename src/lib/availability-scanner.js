@@ -119,6 +119,7 @@ async function runChecks(domains, options = {}) {
             const exists = await checkDNS(item.domain);
             dnsResults.set(item.domain, exists);
             dnsChecked++;
+            console.log(`[DNS] [${dnsChecked}/${domains.length}] ${item.domain} → ${exists ? 'EXISTS' : 'NOT FOUND'}`);
         })();
 
         executing.add(p);
@@ -179,6 +180,8 @@ async function runChecks(domains, options = {}) {
             } catch {}
             rdapResults.set(item.domain, result);
             rdapChecked++;
+            const status = result === null ? 'NO DATA' : result.registered ? 'REGISTERED' : 'AVAILABLE';
+            console.log(`[RDAP] [${rdapChecked}/${needRdap.length}] ${item.domain} → ${status}`);
         })();
 
         rdapExecuting.add(p);
@@ -292,6 +295,8 @@ async function runChecks(domains, options = {}) {
             }
 
             whoisChecked++;
+            const status = whoisResult.registered === null ? 'UNKNOWN' : whoisResult.registered === false ? 'AVAILABLE' : 'REGISTERED';
+            console.log(`[WHOIS] [${whoisChecked}/${needWhois.length - whoisSkipCount}] ${item.domain} → ${status}`);
             results.push({
                 domain: item.domain,
                 sld: item.sld,
