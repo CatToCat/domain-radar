@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0071e3"/>
+      <stop offset="100%" stop-color="#af52de"/>
+    </linearGradient>
+  </defs>
+  <path d="M4 60 A56 56 0 0 1 60 4" stroke="#34c759" stroke-width="4.5" stroke-linecap="round" opacity="0.25"/>
+  <path d="M4 60 A42 42 0 0 1 46 18" stroke="#34c759" stroke-width="4.5" stroke-linecap="round" opacity="0.5"/>
+  <path d="M4 60 A28 28 0 0 1 32 32" stroke="#34c759" stroke-width="4.5" stroke-linecap="round" opacity="0.8"/>
+  <text x="30" y="60" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700" font-style="italic" fill="url(#g)" text-anchor="middle" letter-spacing="-2">DR</text>
+  <line x1="4" y1="62" x2="56" y2="62" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/>
+</svg>
