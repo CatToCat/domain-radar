@@ -9,6 +9,7 @@
     "scan-availability": "node src/cli/scan-availability.js",
     "notify-short-domains": "node src/cli/notify-short-domains.js",
     "run-all": "node src/cli/run-all.js",
+    "update-tld-cache": "node src/cli/update-tld-cache.js",
 
     "test": "node test/test-scan-availability.js && node test/test-notify-short-domains.js",
     "test:scan": "node test/test-scan-availability.js",
