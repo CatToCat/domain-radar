@@ -236,8 +236,6 @@ async function runChecks(domains, options = {}) {
     // Handle unsupported TLDs immediately
     for (const item of needWhois) {
         if (whoisUnsupported.has(item.tld)) {
-            whoisFailed++;
-            whoisChecked++;
             results.push({
                 domain: item.domain,
                 sld: item.sld,
@@ -295,8 +293,9 @@ async function runChecks(domains, options = {}) {
             }
 
             whoisChecked++;
+            const whoisTotal = needWhois.length - whoisSkipCount;
             const status = whoisResult.registered === null ? 'UNKNOWN' : whoisResult.registered === false ? 'AVAILABLE' : 'REGISTERED';
-            console.log(`[WHOIS] [${whoisChecked}/${needWhois.length - whoisSkipCount}] ${item.domain} → ${status}`);
+            console.log(`[WHOIS] [${whoisChecked}/${whoisTotal}] ${item.domain} → ${status}`);
             results.push({
                 domain: item.domain,
                 sld: item.sld,
