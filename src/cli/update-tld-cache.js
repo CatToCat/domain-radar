@@ -52,13 +52,14 @@ function parseWhoisResult(whoisData) {
 }
 
 async function checkWhoisSupport(tld) {
-    const testDomains = [`test-probe.${tld}`, `zzz999.${tld}`];
+    const testDomains = [`a.${tld}`, `google.${tld}`, `test-probe-xyz.${tld}`];
+    let parsedCount = 0;
 
     for (const domain of testDomains) {
         try {
             const whoisData = await whoiser.domain(domain);
             const result = parseWhoisResult(whoisData);
-            if (result !== null) return 'supported';
+            if (result !== null) parsedCount++;
         } catch (err) {
             if (err.message && err.message.includes('not supported')) {
                 return 'not_supported';
@@ -67,7 +68,7 @@ async function checkWhoisSupport(tld) {
         await new Promise(r => setTimeout(r, 500));
     }
 
-    return 'unparseable';
+    return parsedCount >= 2 ? 'supported' : 'unparseable';
 }
 
 async function main() {
