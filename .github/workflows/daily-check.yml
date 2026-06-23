@@ -25,6 +25,9 @@ jobs:
       - name: Generate domain list
         run: node src/cli/generate-domain-list.js
 
+      - name: Estimate scan time
+        run: node src/cli/estimate-scan-time.js
+
       - name: Check availability
         run: node src/cli/scan-availability.js
 

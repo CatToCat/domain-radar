@@ -5,10 +5,13 @@
   "main": "src/cli/run-all.js",
   "type": "commonjs",
   "scripts": {
+
     "generate-domain-list": "node src/cli/generate-domain-list.js",
     "scan-availability": "node src/cli/scan-availability.js",
     "notify-short-domains": "node src/cli/notify-short-domains.js",
     "run-all": "node src/cli/run-all.js",
+
+    "estimate-scan-time": "node src/cli/estimate-scan-time.js",
     "update-tld-cache": "node src/cli/update-tld-cache.js",
 
     "test": "node test/test-scan-availability.js && node test/test-notify-short-domains.js",
