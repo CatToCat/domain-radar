@@ -1,3 +1,20 @@
 {
-  "files": []
+  "files": [
+    {
+      "filename": "2026-06-23_161049.json",
+      "date": "2026-06-23",
+      "config": {
+        "sldLength": 2,
+        "sldMode": "mixed",
+        "tldCount": 117
+      },
+      "summary": {
+        "total": 155844,
+        "dnsExists": 65135,
+        "available": 81428,
+        "registered": 74416,
+        "error": 54281
+      }
+    }
+  ]
 }
