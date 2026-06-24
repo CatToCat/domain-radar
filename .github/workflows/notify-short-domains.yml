@@ -37,3 +37,7 @@ jobs:
         run: node src/cli/notify-short-domains.js
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Assign the issue to the repo owner so they get a GitHub notification
+          # (you are never notified about issues you create yourself, and the
+          # author here is github-actions[bot]).
+          ISSUE_ASSIGNEE: ${{ github.repository_owner }}
