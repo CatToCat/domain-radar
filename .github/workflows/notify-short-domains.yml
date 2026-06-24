@@ -28,6 +28,11 @@ jobs:
 
       - run: npm ci
 
+      - name: Ensure issue label exists
+        run: gh label create domain-alert --color FF6B6B --description "Available short domain alert" --force
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Notify short domains
         run: node src/cli/notify-short-domains.js
         env:
