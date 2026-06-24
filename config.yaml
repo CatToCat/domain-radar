@@ -11,119 +11,121 @@ tlds:
   - ag
   - ai
   - am
-  - as
-  - at
-  - bz
   - cc
-  - ch
-  - cl
   - cm
-  - cn
   - co
-  - cx
-  - de
-  - dj
-  - dm
   - fm
   - gg
   - gl
   - gs
   - gy
-  - hk
-  - hn
-  - ht
-  - id
   - im
-  - in
   - io
   - is
-  - it
-  - je
-  - jp
-  - ke
-  - ki
-  - kr
-  - kz
   - la
-  - lc
   - li
-  - lt
-  - lv
   - ly
-  - ma
   - mc
-  - md
   - me
-  - mg
-  - mk
-  - ml
   - mn
-  - mo
-  - mp
   - ms
   - mu
-  - mx
-  - nc
-  - nl
-  - no
   - nu
-  - nz
-  - pe
-  - ph
-  - pk
-  - pl
   - pm
-  - pr
   - pw
-  - qa
   - re
-  - ro
-  - rs
-  - ru
-  - rw
-  - sb
   - sc
-  - se
-  - sg
   - sh
-  - si
-  - sk
-  - sl
-  - sm
-  - sn
   - so
-  - sr
   - st
-  - sx
-  - tc
   - tf
-  - tg
-  - tj
-  - tk
-  - tl
   - tm
-  - tn
   - to
-  - tt
   - tv
-  - tw
-  - tz
-  - ua
-  - ug
-  - uk
-  - us
-  - uy
-  - uz
-  - vc
-  - ve
   - vg
-  - vi
-  - vn
-  - vu
   - wf
   - ws
   - yt
-  - za
+  # ccTLDs - restricted / conditional registration (disabled)
+  # - as
+  # - at
+  # - bz
+  # - ch
+  # - cl
+  # - cn
+  # - cx
+  # - de
+  # - dj
+  # - dm
+  # - hk
+  # - hn
+  # - ht
+  # - id
+  # - in
+  # - it
+  # - je
+  # - jp
+  # - ke
+  # - ki
+  # - kr
+  # - kz
+  # - lc
+  # - lt
+  # - lv
+  # - ma
+  # - md
+  # - mg
+  # - mk
+  # - ml
+  # - mo
+  # - mp
+  # - mx
+  # - nc
+  # - nl
+  # - no
+  # - nz
+  # - pe
+  # - ph
+  # - pk
+  # - pl
+  # - pr
+  # - qa
+  # - ro
+  # - rs
+  # - ru
+  # - rw
+  # - sb
+  # - se
+  # - sg
+  # - si
+  # - sk
+  # - sl
+  # - sm
+  # - sn
+  # - sr
+  # - sx
+  # - tc
+  # - tg
+  # - tj
+  # - tk
+  # - tl
+  # - tn
+  # - tt
+  # - tw
+  # - tz
+  # - ua
+  # - ug
+  # - uk
+  # - us
+  # - uy
+  # - uz
+  # - vc
+  # - ve
+  # - vi
+  # - vn
+  # - vu
+  # - za
+
   # gTLDs - Generic Top-Level Domain / Open to public
   - app
   - art
