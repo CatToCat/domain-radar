@@ -90,16 +90,27 @@ async function notify(results, options = {}) {
     try {
         fs.writeFileSync(bodyFile, body, 'utf8');
 
-        const baseArgs = ['issue', 'create', '--title', title, '--body-file', bodyFile];
+        const requiredArgs = ['issue', 'create', '--title', title, '--body-file', bodyFile];
+
+        // Optional args (label + assignee) can each cause the whole command to
+        // fail (missing label, or token not permitted to assign). Try with all
+        // of them first, then progressively fall back to dropping them so the
+        // issue still gets created.
+        //
+        // Assigning the issue is what triggers a GitHub notification: you are
+        // not notified about issues you create yourself, and the author here is
+        // github-actions[bot]. Configurable via ISSUE_ASSIGNEE.
+        const assignee = process.env.ISSUE_ASSIGNEE || '@me';
+        const optionalArgs = ['--label', ISSUE_LABEL];
+        if (assignee) {
+            optionalArgs.push('--assignee', assignee);
+        }
 
         try {
-            runGhIssueCreate([...baseArgs, '--label', ISSUE_LABEL]);
-        } catch (labelErr) {
-            // The label may not exist in the repo (gh does not auto-create it),
-            // which makes the whole command fail. Retry without the label so the
-            // issue still gets created.
-            console.warn(`[Notify] Could not create issue with label "${ISSUE_LABEL}" (${labelErr.message}). Retrying without label...`);
-            runGhIssueCreate(baseArgs);
+            runGhIssueCreate([...requiredArgs, ...optionalArgs]);
+        } catch (optErr) {
+            console.warn(`[Notify] Issue create with label/assignee failed (${optErr.message}). Retrying without them...`);
+            runGhIssueCreate(requiredArgs);
         }
 
         console.log('[Notify] GitHub Issue created successfully.');
