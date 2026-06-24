@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -30,10 +29,6 @@ jobs:
 
       - name: Check availability
         run: node src/cli/scan-availability.js
-
-      - name: Notify short domains
-        run: node src/cli/notify-short-domains.js
-        continue-on-error: true
 
       - name: Commit and push results
         run: |

@@ -1,6 +1,13 @@
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 const MAX_TOTAL_LENGTH = 4;
+// Cap how many domains are listed in the issue body to keep it readable and
+// well within GitHub's body size limits (~65k chars). The full count is always
+// reported in the title/summary.
+const MAX_LISTED_DOMAINS = 500;
 
 function filterShortDomains(results) {
     return results.filter(r =>
@@ -12,14 +19,26 @@ function filterShortDomains(results) {
 }
 
 function buildIssueBody(domains) {
+    const total = domains.length;
+    const listed = domains.slice(0, MAX_LISTED_DOMAINS);
+
     const lines = [
         '## Available Short Domains',
         '',
-        '| Domain | SLD | TLD | Total Length |',
-        '|--------|-----|-----|-------------|',
+        `Found **${total}** available domain(s) with total length <= ${MAX_TOTAL_LENGTH}.`,
+        '',
     ];
 
-    for (const d of domains) {
+    if (total > MAX_LISTED_DOMAINS) {
+        lines.push(`> Showing the first ${MAX_LISTED_DOMAINS} of ${total}. See the scan results JSON for the full list.`, '');
+    }
+
+    lines.push(
+        '| Domain | SLD | TLD | Total Length |',
+        '|--------|-----|-----|-------------|',
+    );
+
+    for (const d of listed) {
         lines.push(`| ${d.domain} | ${d.sld} | ${d.tld} | ${d.sldLength + d.tldLength} |`);
     }
 
@@ -32,12 +51,15 @@ async function notify(results, options = {}) {
     const shortDomains = filterShortDomains(results);
 
     if (shortDomains.length === 0) {
-        console.log('[Notify] No short domains (<=4 chars) available.');
+        console.log(`[Notify] No short domains (<=${MAX_TOTAL_LENGTH} chars) available.`);
         return;
     }
 
     console.log(`[Notify] Found ${shortDomains.length} short domain(s) available!`);
-    shortDomains.forEach(d => console.log(`  → ${d.domain}`));
+    shortDomains.slice(0, 20).forEach(d => console.log(`  → ${d.domain}`));
+    if (shortDomains.length > 20) {
+        console.log(`  ... and ${shortDomains.length - 20} more`);
+    }
 
     const date = new Date().toISOString().split('T')[0];
     const title = `${shortDomains.length} short domain(s) available (${date})`;
@@ -49,15 +71,40 @@ async function notify(results, options = {}) {
         return;
     }
 
+    // Write the body to a temp file and pass it via --body-file. This avoids
+    // shell escaping issues and the OS argument-length limit that breaks
+    // `gh issue create --body "<huge string>"`.
+    const bodyFile = path.join(os.tmpdir(), `domain-radar-issue-${Date.now()}.md`);
+
     try {
-        execSync(
-            `gh issue create --title "${title}" --body "${body.replace(/"/g, '\\"')}" --label "domain-alert"`,
-            { stdio: 'inherit' }
+        fs.writeFileSync(bodyFile, body, 'utf8');
+
+        const result = spawnSync(
+            'gh',
+            [
+                'issue', 'create',
+                '--title', title,
+                '--body-file', bodyFile,
+                '--label', 'domain-alert',
+            ],
+            { stdio: 'inherit', shell: false }
         );
+
+        if (result.error) {
+            throw result.error;
+        }
+        if (result.status !== 0) {
+            throw new Error(`gh exited with code ${result.status}`);
+        }
+
         console.log('[Notify] GitHub Issue created successfully.');
     } catch (err) {
         console.error('[Notify] Failed to create GitHub Issue:', err.message);
+    } finally {
+        try {
+            fs.unlinkSync(bodyFile);
+        } catch {}
     }
 }
 
-module.exports = { notify, filterShortDomains };
+module.exports = { notify, filterShortDomains, buildIssueBody, MAX_TOTAL_LENGTH, MAX_LISTED_DOMAINS };
