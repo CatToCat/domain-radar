@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 const { runChecks } = require('../lib/availability-scanner');
-const { notify } = require('../lib/short-domain-notifier');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, 'config.yaml');
@@ -30,7 +29,7 @@ function updateManifest(entry) {
 async function main() {
     // Load generated domains
     if (!fs.existsSync(DOMAINS_PATH)) {
-        console.error('No domain list found. Run "npm run generate" first.');
+        console.error('No domain list found. Run "npm run generate-domain-list" first.');
         process.exit(1);
     }
 
@@ -99,9 +98,6 @@ async function main() {
 
     console.log(`\nDone! Results: public/results/${filename}`);
     console.log(`Total: ${results.length} | Available: ${availableCount} | Registered: ${registeredCount} | DNS Exists: ${dnsExistsCount} | Error: ${errorCount}`);
-
-    // Notify if short domains are available
-    await notify(results);
 }
 
 main().catch(err => {

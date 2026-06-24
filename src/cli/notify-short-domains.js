@@ -7,7 +7,7 @@ const RESULTS_DIR = path.join(ROOT, 'public', 'results');
 const MANIFEST_PATH = path.join(RESULTS_DIR, 'manifest.json');
 
 if (!fs.existsSync(MANIFEST_PATH)) {
-    console.error('No manifest found. Run "npm run check" first.');
+    console.error('No manifest found. Run "npm run scan-availability" first.');
     process.exit(1);
 }
 

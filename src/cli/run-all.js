@@ -3,7 +3,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
 
-console.log('=== DomainX Scan ===\n');
+console.log('=== Domain Radar Scan ===\n');
 
 console.log('[Step 1/2] Generating domain list...\n');
 execSync('node src/cli/generate-domain-list.js', { cwd: ROOT, stdio: 'inherit' });

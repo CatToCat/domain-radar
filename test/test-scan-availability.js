@@ -4,14 +4,12 @@ const { mockDomains, mockResults } = require('./mock-data');
 
 const ROOT = path.join(__dirname, '..');
 const RESULTS_DIR = path.join(ROOT, 'public', 'results');
-const LOGS_DIR = path.join(ROOT, 'public', 'logs');
 const MANIFEST_PATH = path.join(RESULTS_DIR, 'manifest.json');
 
 const mockRunChecks = async (domains, options) => {
-    const { logger } = options;
     const results = [];
 
-    logger?.info(`DNS check starting: ${domains.length} domains (concurrency: ${options.dnsConcurrency})`);
+    console.log(`DNS check starting: ${domains.length} domains (concurrency: ${options.dnsConcurrency})`);
 
     for (let i = 0; i < domains.length; i++) {
         const item = domains[i];
@@ -21,21 +19,21 @@ const mockRunChecks = async (domains, options) => {
             dnsExists: true, whois: null
         };
 
-        logger?.info(`DNS [${i + 1}/${domains.length}] ${item.domain} → ${mock.dnsExists ? 'EXISTS' : 'NOT FOUND'}`);
+        console.log(`DNS [${i + 1}/${domains.length}] ${item.domain} → ${mock.dnsExists ? 'EXISTS' : 'NOT FOUND'}`);
         results.push(mock);
     }
 
     const dnsExists = results.filter(r => r.dnsExists).length;
-    logger?.info(`DNS check complete. Exists: ${dnsExists}, Not found: ${domains.length - dnsExists}`);
+    console.log(`DNS check complete. Exists: ${dnsExists}, Not found: ${domains.length - dnsExists}`);
 
     const needWhois = results.filter(r => !r.dnsExists);
-    logger?.info(`WHOIS check starting: ${needWhois.length} domains`);
+    console.log(`WHOIS check starting: ${needWhois.length} domains`);
 
     for (let i = 0; i < needWhois.length; i++) {
         const r = needWhois[i];
-        logger?.info(`WHOIS checking: ${r.domain}`);
+        console.log(`WHOIS checking: ${r.domain}`);
         const status = r.whois?.registered === false ? 'AVAILABLE' : r.whois?.registered === true ? 'REGISTERED' : 'ERROR';
-        logger?.info(`WHOIS [${i + 1}/${needWhois.length}] ${r.domain} → ${status}`);
+        console.log(`WHOIS [${i + 1}/${needWhois.length}] ${r.domain} → ${status}`);
     }
 
     return results;
@@ -58,18 +56,15 @@ function updateManifest(entry) {
 }
 
 async function main() {
-    const { Logger } = require('../src/lib/scan-logger');
     const { notify } = require('../src/lib/short-domain-notifier');
-
-    const logger = new Logger(LOGS_DIR);
 
     console.log(`[TEST] Running scan-availability with ${mockDomains.length} mock domains\n`);
 
+    const startTime = new Date();
     const results = await mockRunChecks(mockDomains, {
         dnsConcurrency: 10,
         whoisDelay: 0,
-        whoisRetries: 1,
-        logger
+        whoisRetries: 1
     });
 
     const now = new Date();
@@ -90,7 +85,7 @@ async function main() {
             registered: registeredCount,
             error: errorCount
         },
-        startTime: logger.startTime.toISOString(),
+        startTime: startTime.toISOString(),
         endTime: now.toISOString(),
         results
     };
@@ -107,10 +102,8 @@ async function main() {
         summary: output.summary
     });
 
-    const logResult = logger.finish();
     console.log(`\n[TEST] Done!`);
     console.log(`[TEST] Results: public/results/${filename}`);
-    console.log(`[TEST] Log: public/logs/${logResult.filename}`);
     console.log(`[TEST] Total: ${results.length} | Available: ${availableCount} | Registered: ${registeredCount} | DNS Exists: ${dnsExistsCount} | Error: ${errorCount}`);
 
     console.log('\n[TEST] Running notify (dry-run, no GitHub Issue created)...\n');
