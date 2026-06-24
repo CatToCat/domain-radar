@@ -8,6 +8,7 @@ const MAX_TOTAL_LENGTH = 4;
 // well within GitHub's body size limits (~65k chars). The full count is always
 // reported in the title/summary.
 const MAX_LISTED_DOMAINS = 500;
+const ISSUE_LABEL = 'domain-alert';
 
 function filterShortDomains(results) {
     return results.filter(r =>
@@ -46,6 +47,16 @@ function buildIssueBody(domains) {
     return lines.join('\n');
 }
 
+function runGhIssueCreate(args) {
+    const result = spawnSync('gh', args, { stdio: 'inherit', shell: false });
+    if (result.error) {
+        throw result.error;
+    }
+    if (result.status !== 0) {
+        throw new Error(`gh exited with code ${result.status}`);
+    }
+}
+
 async function notify(results, options = {}) {
     const { dryRun = false } = options;
     const shortDomains = filterShortDomains(results);
@@ -79,22 +90,16 @@ async function notify(results, options = {}) {
     try {
         fs.writeFileSync(bodyFile, body, 'utf8');
 
-        const result = spawnSync(
-            'gh',
-            [
-                'issue', 'create',
-                '--title', title,
-                '--body-file', bodyFile,
-                '--label', 'domain-alert',
-            ],
-            { stdio: 'inherit', shell: false }
-        );
+        const baseArgs = ['issue', 'create', '--title', title, '--body-file', bodyFile];
 
-        if (result.error) {
-            throw result.error;
-        }
-        if (result.status !== 0) {
-            throw new Error(`gh exited with code ${result.status}`);
+        try {
+            runGhIssueCreate([...baseArgs, '--label', ISSUE_LABEL]);
+        } catch (labelErr) {
+            // The label may not exist in the repo (gh does not auto-create it),
+            // which makes the whole command fail. Retry without the label so the
+            // issue still gets created.
+            console.warn(`[Notify] Could not create issue with label "${ISSUE_LABEL}" (${labelErr.message}). Retrying without label...`);
+            runGhIssueCreate(baseArgs);
         }
 
         console.log('[Notify] GitHub Issue created successfully.');
