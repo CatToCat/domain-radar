@@ -226,6 +226,8 @@
         }
 
         .badge-available { background: rgba(52, 199, 89, 0.12); color: var(--green); }
+        .badge-premium { background: rgba(255, 204, 0, 0.14); color: #b8860b; }
+        .badge-reserved { background: rgba(142, 142, 147, 0.16); color: #6e6e73; }
         .badge-registered { background: rgba(255, 59, 48, 0.12); color: var(--red); }
         .badge-dns { background: rgba(255, 149, 0, 0.12); color: var(--orange); }
         .badge-error { background: rgba(175, 82, 222, 0.12); color: var(--purple); }
@@ -320,6 +322,9 @@
                 <select id="filter-status">
                     <option value="all">All</option>
                     <option value="available">Available</option>
+                    <option value="premium">Premium</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="unsupported">Unsupported</option>
                     <option value="registered-dns">Registered (DNS)</option>
                     <option value="registered-rdap">Registered (RDAP)</option>
                     <option value="registered-whois">Registered (WHOIS)</option>
@@ -412,6 +417,19 @@
         }
 
         function getStatus(item) {
+            // Prefer the authoritative `status` field (set after Cloudflare
+            // confirmation). Fall back to legacy derivation for old result files.
+            if (item.status) {
+                if (item.status === 'registered') {
+                    const detail = (item.whois && item.whois.detail || '').toLowerCase();
+                    if (item.dnsExists) return 'registered-dns';
+                    if (detail.includes('rdap')) return 'registered-rdap';
+                    if (detail.includes('whois')) return 'registered-whois';
+                    return 'registered-dns';
+                }
+                if (item.status === 'unknown') return 'error';
+                return item.status; // 'available' | 'premium' | 'reserved' | 'unsupported'
+            }
             if (item.dnsExists) return 'registered-dns';
             if (!item.whois) return 'error';
             if (item.whois.registered === false) return 'available';
@@ -425,6 +443,9 @@
         function getStatusBadge(status) {
             const labels = {
                 'available': 'Available',
+                'premium': 'Premium',
+                'reserved': 'Reserved',
+                'unsupported': 'Unsupported',
                 'registered-dns': 'Registered (DNS)',
                 'registered-rdap': 'Registered (RDAP)',
                 'registered-whois': 'Registered (WHOIS)',
@@ -432,6 +453,9 @@
             };
             const classes = {
                 'available': 'badge-available',
+                'premium': 'badge-premium',
+                'reserved': 'badge-reserved',
+                'unsupported': 'badge-reserved',
                 'registered-dns': 'badge-dns',
                 'registered-rdap': 'badge-registered',
                 'registered-whois': 'badge-registered',

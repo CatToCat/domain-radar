@@ -1,22 +1,39 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
-const { generateSLDs, generateDomains } = require('../lib/domain-list-generator');
+const { generateSLDs, generateDomains, filterTldsByPolicy } = require('../lib/domain-list-generator');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, 'config.yaml');
+const TLD_POLICY_PATH = path.join(ROOT, 'data', 'tld-policy.json');
 const OUTPUTS_DIR = path.join(ROOT, 'public', 'results');
 const DOMAINS_PATH = path.join(OUTPUTS_DIR, 'domains.json');
 
+function loadTldPolicy() {
+    if (!fs.existsSync(TLD_POLICY_PATH)) return { restricted: [], premiumHeavy: [] };
+    try {
+        return JSON.parse(fs.readFileSync(TLD_POLICY_PATH, 'utf8'));
+    } catch {
+        return { restricted: [], premiumHeavy: [] };
+    }
+}
+
 async function main() {
     const config = yaml.load(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    const policy = loadTldPolicy();
     const tldLength = config.tld?.length || 3;
-    const tlds = (config.tlds || []).filter(t => t.length <= tldLength);
+    // minSldLength defaults to 2: single-character SLDs are almost universally
+    // reserved by registries, so scanning them only produces false positives.
+    const minSldLength = config.sld?.minLength ?? 2;
 
-    console.log(`Config: SLD length=${config.sld.length}, mode=${config.sld.mode}, TLD length=${tldLength}, TLDs=${tlds.length}`);
+    const lengthFiltered = (config.tlds || []).filter(t => t.length <= tldLength);
+    const { kept: tlds, removed } = filterTldsByPolicy(lengthFiltered, policy);
 
-    const slds = generateSLDs(config.sld.length, config.sld.mode);
-    console.log(`Generated ${slds.length} SLD combinations`);
+    console.log(`Config: SLD length=${minSldLength}-${config.sld.length}, mode=${config.sld.mode}, TLD length<=${tldLength}`);
+    console.log(`TLDs: ${tlds.length} CF-supported (excluded ${removed.length} unsupported: ${removed.join(', ') || 'none'})`);
+
+    const slds = generateSLDs(config.sld.length, config.sld.mode, { minLength: minSldLength });
+    console.log(`Generated ${slds.length} SLD combinations (minLength=${minSldLength})`);
 
     const domains = generateDomains(slds, tlds).map(d => ({ ...d, mode: config.sld.mode }));
     console.log(`Total domains: ${domains.length}`);
@@ -28,6 +45,7 @@ async function main() {
     const output = {
         config: {
             sldLength: config.sld.length,
+            sldMinLength: minSldLength,
             sldMode: config.sld.mode,
             tldCount: tlds.length
         },

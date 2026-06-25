@@ -5,7 +5,9 @@ Scan short domain availability across 125+ TLDs automatically. Combines DNS, RDA
 ## Features
 
 - Exhaustive enumeration of short domain combinations (digits, alpha, or mixed modes)
-- Multi-layer availability detection: DNS resolution → RDAP → WHOIS fallback
+- Multi-layer availability detection: DNS resolution → RDAP → WHOIS → Cloudflare domain-check
+- Distinguishes truly **registerable** domains from registry-reserved and premium ones, with pricing
+- TLD allowlist restricted to extensions Cloudflare can authoritatively confirm
 - Per-TLD concurrent WHOIS with configurable rate limiting
 - TLD cache to skip unsupported RDAP/WHOIS lookups (auto-updated monthly)
 - Static single-page result viewer with real-time filtering, sorting, and pagination
@@ -39,6 +41,7 @@ Edit `config.yaml` to customize scanning parameters:
 ```yaml
 sld:
   length: 2           # SLD character length
+  minLength: 2        # skip SLDs shorter than this (1-char are registry-reserved)
   mode: mixed         # digits | alpha | mixed
 
 tld:
@@ -50,7 +53,48 @@ scanner:
   whoisConcurrency: 10 # Parallel TLD queues for WHOIS
   whoisDelay: 500     # Delay between WHOIS calls per TLD (ms)
   whoisRetries: 3     # Retry attempts on WHOIS failure
+  cloudflareConcurrency: 3 # Parallel Cloudflare domain-check batches
+  cloudflareBatchSize: 20  # Domains per domain-check request (CF max 20)
+  cloudflareDelay: 200     # Delay between Cloudflare batches (ms)
 ```
+
+## Availability Status
+
+Each result carries an authoritative `status`:
+
+| Status | Meaning | In notifications? |
+|--------|---------|-------------------|
+| `available` | Registerable at standard price (Cloudflare confirmed) | Yes |
+| `premium` | Registerable but premium-priced | No (flagged) |
+| `reserved` | Registry-reserved / unavailable | No |
+| `unsupported` | TLD not checkable via Cloudflare | No |
+| `registered` | Already taken | No |
+| `unknown` | Could not determine | No |
+
+RDAP/WHOIS can only tell whether a domain is *in the registry* — they cannot
+distinguish reserved/premium from freely registerable. The **Cloudflare
+domain-check stage** performs an authoritative, real-time registry check and
+returns `registrable`, pricing tier, and (when present) annual pricing. Without
+Cloudflare credentials the scan still runs, but `available` reflects RDAP/WHOIS
+only and may include reserved/premium domains.
+
+### Enabling Cloudflare confirmation
+
+1. Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with Registrar permissions and note your account ID.
+2. Set them locally (`CLOUDFLARE_ACCOUNT_ID=...`, `CLOUDFLARE_API_TOKEN=...`) or as GitHub repo secrets of the same names.
+
+The `domain-check` endpoint is a read-only availability check (it does not
+register anything) and batches up to 20 domains per request.
+
+## TLD Policy
+
+`data/tld-policy.json` defines the **`supported`** allowlist — the TLDs
+Cloudflare supports for *programmatic* registration. Only these are scanned,
+because only these can be authoritatively confirmed as registerable via the
+domain-check API. TLDs outside the allowlist (e.g. most ccTLDs) are excluded
+from scanning entirely; register them via the Cloudflare dashboard if needed.
+
+Single-character SLDs are skipped by default (`sld.minLength: 2`) because registries almost always reserve them.
 
 ## TLD Cache
 
@@ -65,7 +109,8 @@ scanner:
 domain-radar/
 ├── config.yaml              # Scanner configuration
 ├── data/
-│   └── tld-cache.json       # TLD support cache
+│   ├── tld-cache.json       # TLD support cache
+│   └── tld-policy.json      # TLD registration policy (restricted/premium)
 ├── public/
 │   ├── index.html           # Result viewer UI
 │   └── results/             # Scan result JSON files

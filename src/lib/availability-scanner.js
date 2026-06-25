@@ -2,7 +2,87 @@ const dns = require('dns').promises;
 const whoiser = require('whoiser');
 
 const RDAP_BOOTSTRAP_URL = 'https://data.iana.org/rdap/dns.json';
+const CF_API_BASE = 'https://api.cloudflare.com/client/v4';
 let rdapServers = null;
+
+// ---------------------------------------------------------------------------
+// Cloudflare Registrar domain-check confirmation (Stage 4).
+//
+// RDAP/WHOIS can only tell us whether a domain is *in the registry*. They
+// cannot distinguish "registry-reserved" or "premium" from "freely
+// registerable". Cloudflare's domain-check endpoint performs an authoritative,
+// real-time registry check and returns `registrable`, `tier` (standard|premium)
+// and a `reason` when not registrable - exactly the signal we need.
+//
+// Only TLDs Cloudflare supports for programmatic registration can be
+// authoritatively checked; scanning is restricted to those (see tld-policy.json).
+//
+// Status summary values used throughout the pipeline:
+//   'registered'  - taken / unavailable
+//   'available'   - registerable at standard price (Cloudflare confirmed)
+//   'premium'     - registerable but premium-priced
+//   'reserved'    - registry-reserved / blocked
+//   'unsupported' - TLD not checkable via Cloudflare
+//   'unknown'     - could not determine
+// ---------------------------------------------------------------------------
+
+// Map a single Cloudflare domain-check result object to our summary status.
+function classifyCloudflareCheck(entry) {
+    if (!entry || typeof entry !== 'object') return 'unknown';
+    if (entry.registrable === true) {
+        return entry.tier === 'premium' ? 'premium' : 'available';
+    }
+    // registrable === false: use the reason to classify.
+    switch (entry.reason) {
+        case 'domain_premium':
+            return 'premium';
+        case 'domain_unavailable':
+            return 'registered';
+        case 'extension_not_supported':
+        case 'extension_not_supported_via_api':
+        case 'extension_disallows_registration':
+            return 'unsupported';
+        default:
+            return entry.tier === 'premium' ? 'premium' : 'unknown';
+    }
+}
+
+// Check up to `cloudflareBatchSize` domains in one Cloudflare domain-check call.
+// Returns a Map<domain, {status, pricing}> for the domains in the batch.
+async function checkCloudflareBatch(domains, { accountId, apiToken }) {
+    const url = `${CF_API_BASE}/accounts/${accountId}/registrar/domain-check`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ domains }),
+        signal: AbortSignal.timeout(15000)
+    });
+    if (!res.ok) {
+        const err = new Error(`Cloudflare HTTP ${res.status}`);
+        err.statusCode = res.status;
+        try { err.body = await res.text(); } catch {}
+        throw err;
+    }
+    const data = await res.json();
+    if (!data.success || !data.result || !Array.isArray(data.result.domains)) {
+        const err = new Error('Cloudflare domain-check returned unexpected payload');
+        err.body = JSON.stringify(data).slice(0, 300);
+        throw err;
+    }
+    const out = new Map();
+    for (const entry of data.result.domains) {
+        out.set(entry.name, {
+            status: classifyCloudflareCheck(entry),
+            tier: entry.tier || null,
+            pricing: entry.pricing || null,
+            reason: entry.reason || null
+        });
+    }
+    return out;
+}
 
 async function loadRdapBootstrap() {
     if (rdapServers) return rdapServers;
@@ -100,12 +180,36 @@ async function checkWHOIS(domain) {
     return null;
 }
 
+// Compute a preliminary status from DNS/RDAP/WHOIS results, before Cloudflare
+// confirmation. premiumHeavy is a Set of TLDs whose short SLDs are commonly
+// premium-priced; for those we mark unregistered domains as 'premium' rather
+// than 'available' so they are not over-promised when Cloudflare is unavailable.
+function derivePreliminaryStatus(record, premiumHeavy = new Set()) {
+    if (record.dnsExists) return 'registered';
+    const w = record.whois;
+    if (!w) return 'unknown';
+    if (w.registered === true) return 'registered';
+    if (w.registered === null) return 'unknown';
+    if (w.registered === false) {
+        return premiumHeavy.has(record.tld) ? 'premium' : 'available';
+    }
+    return 'unknown';
+}
+
 async function runChecks(domains, options = {}) {
     const { dnsConcurrency = 50, rdapConcurrency = 20, whoisDelay = 2000, whoisRetries = 3, tldCache = {} } = options;
     const results = [];
 
     const rdapUnsupported = new Set(tldCache.rdapUnsupported || []);
     const whoisUnsupported = new Set(tldCache.whoisUnsupported || []);
+
+    // Cloudflare domain-check (Stage 4) options.
+    const cfAccountId = options.cloudflareAccountId || process.env.CLOUDFLARE_ACCOUNT_ID || null;
+    const cfApiToken = options.cloudflareApiToken || process.env.CLOUDFLARE_API_TOKEN || null;
+    const cfBatchSize = options.cloudflareBatchSize || 20;
+    const cfConcurrency = options.cloudflareConcurrency || 3;
+    const cfDelay = options.cloudflareDelay != null ? options.cloudflareDelay : 0;
+    const premiumHeavySet = new Set(options.premiumHeavy || []);
 
     // Stage 1: DNS bulk check
     console.log(`[DNS] Starting: ${domains.length} domains (concurrency: ${dnsConcurrency})`);
@@ -330,7 +434,101 @@ async function runChecks(domains, options = {}) {
 
     console.log(`[WHOIS] Complete. Checked: ${whoisChecked}, Success: ${whoisSuccess}, Failed: ${whoisFailed}`);
 
+    // Derive a preliminary status for every record from DNS/RDAP/WHOIS.
+    for (const r of results) {
+        r.status = derivePreliminaryStatus(r, premiumHeavySet);
+    }
+
+    // Stage 4: Cloudflare domain-check confirmation.
+    // Earlier stages can only say "not in registry". Cloudflare's domain-check
+    // is an authoritative, real-time registry check that distinguishes
+    // registerable / premium / unavailable. We confirm every record that
+    // currently looks 'available'. Without CF credentials this stage is skipped
+    // and 'available' keeps its (less reliable) RDAP/WHOIS meaning.
+    if (cfAccountId && cfApiToken) {
+        const needConfirm = results.filter(r => r.status === 'available');
+        const byDomain = new Map(needConfirm.map(r => [r.domain, r]));
+
+        // Build batches of up to cfBatchSize domains.
+        const batches = [];
+        for (let i = 0; i < needConfirm.length; i += cfBatchSize) {
+            batches.push(needConfirm.slice(i, i + cfBatchSize).map(r => r.domain));
+        }
+        console.log(`[Cloudflare] Starting: confirming ${needConfirm.length} candidate available domains in ${batches.length} batches (size ${cfBatchSize}, concurrency ${cfConcurrency})`);
+
+        let batchesDone = 0;
+        let stillAvailable = 0;
+        let downgraded = 0;
+        let cfErrors = 0;
+        let aborted = false;
+
+        const cfExecuting = new Set();
+
+        for (const batch of batches) {
+            if (aborted) break;
+
+            const p = (async () => {
+                let resultMap = null;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        resultMap = await checkCloudflareBatch(batch, { accountId: cfAccountId, apiToken: cfApiToken });
+                        break;
+                    } catch (err) {
+                        if (err.statusCode === 401 || err.statusCode === 403) {
+                            // Auth failure is fatal for the whole stage.
+                            console.error(`[Cloudflare] Auth error (HTTP ${err.statusCode}). Aborting confirmation. ${err.body || ''}`);
+                            aborted = true;
+                            return;
+                        }
+                        if (err.statusCode === 429 && attempt < 3) {
+                            await new Promise(res => setTimeout(res, attempt * 2000));
+                            continue;
+                        }
+                        if (attempt >= 3) {
+                            cfErrors += batch.length;
+                            return;
+                        }
+                        await new Promise(res => setTimeout(res, attempt * 1000));
+                    }
+                }
+                if (!resultMap) return;
+
+                batchesDone++;
+                for (const domain of batch) {
+                    const r = byDomain.get(domain);
+                    const cf = resultMap.get(domain);
+                    if (!r || !cf) continue;
+                    r.status = cf.status;
+                    r.cloudflare = { tier: cf.tier, reason: cf.reason };
+                    if (cf.pricing) r.pricing = cf.pricing;
+                    r.whois = { ...(r.whois || {}), detail: `Cloudflare: ${cf.status}${cf.tier ? ' (' + cf.tier + ')' : ''}` };
+                    if (cf.status === 'available') stillAvailable++;
+                    else downgraded++;
+                }
+                console.log(`[Cloudflare] [${batchesDone}/${batches.length}] batch of ${batch.length} confirmed`);
+            })();
+
+            cfExecuting.add(p);
+            p.finally(() => cfExecuting.delete(p));
+
+            if (cfExecuting.size >= cfConcurrency) {
+                await Promise.race(cfExecuting);
+            }
+            if (cfDelay > 0) {
+                await new Promise(res => setTimeout(res, cfDelay));
+            }
+        }
+        await Promise.all(cfExecuting);
+
+        if (aborted) {
+            console.log('[Cloudflare] Stopped early due to auth error; remaining domains keep preliminary status.');
+        }
+        console.log(`[Cloudflare] Complete. Confirmed available: ${stillAvailable}, Downgraded (premium/registered/reserved): ${downgraded}, Errors: ${cfErrors}`);
+    } else {
+        console.log('[Cloudflare] Skipped (set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN to enable). "available" reflects RDAP/WHOIS only and may include reserved/premium domains.');
+    }
+
     return results;
 }
 
-module.exports = { checkDNS, checkRDAP, checkWHOIS, runChecks };
+module.exports = { checkDNS, checkRDAP, checkWHOIS, checkCloudflareBatch, classifyCloudflareCheck, derivePreliminaryStatus, runChecks };
