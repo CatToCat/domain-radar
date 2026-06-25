@@ -72,17 +72,23 @@ async function main() {
     const filename = `${datetime}.json`;
 
     const dnsExistsCount = results.filter(r => r.dnsExists).length;
-    const availableCount = results.filter(r => !r.dnsExists && r.whois && !r.whois.registered).length;
-    const registeredCount = results.filter(r => r.dnsExists || (r.whois && r.whois.registered)).length;
-    const errorCount = results.filter(r => !r.dnsExists && r.whois && r.whois.registered === null).length;
+    const availableCount = results.filter(r => r.status === 'available').length;
+    const premiumCount = results.filter(r => r.status === 'premium').length;
+    const reservedCount = results.filter(r => r.status === 'reserved').length;
+    const registeredCount = results.filter(r => r.status === 'registered').length;
+    const unsupportedCount = results.filter(r => r.status === 'unsupported').length;
+    const errorCount = results.filter(r => r.status === 'unknown').length;
 
     const output = {
-        config: { sldLength: 2, sldMode: 'mixed', tldLength: 2 },
+        config: { sldLength: 2, sldMinLength: 2, sldMode: 'mixed', tldLength: 2 },
         summary: {
             total: results.length,
             dnsExists: dnsExistsCount,
             available: availableCount,
+            premium: premiumCount,
+            reserved: reservedCount,
             registered: registeredCount,
+            unsupported: unsupportedCount,
             error: errorCount
         },
         startTime: startTime.toISOString(),
@@ -104,7 +110,7 @@ async function main() {
 
     console.log(`\n[TEST] Done!`);
     console.log(`[TEST] Results: public/results/${filename}`);
-    console.log(`[TEST] Total: ${results.length} | Available: ${availableCount} | Registered: ${registeredCount} | DNS Exists: ${dnsExistsCount} | Error: ${errorCount}`);
+    console.log(`[TEST] Total: ${results.length} | Available: ${availableCount} | Premium: ${premiumCount} | Reserved: ${reservedCount} | Registered: ${registeredCount} | Unsupported: ${unsupportedCount} | DNS Exists: ${dnsExistsCount} | Error: ${errorCount}`);
 
     console.log('\n[TEST] Running notify (dry-run, no GitHub Issue created)...\n');
     await notify(results, { dryRun: true });

@@ -12,9 +12,11 @@ const ISSUE_LABEL = 'domain-alert';
 
 function filterShortDomains(results) {
     return results.filter(r =>
-        !r.dnsExists &&
-        r.whois &&
-        r.whois.registered === false &&
+        // Only truly registerable domains. Prefer the authoritative `status`
+        // field (set after Cloudflare confirmation); fall back to the legacy
+        // whois.registered flag for older result files.
+        (r.status === 'available' ||
+            (r.status == null && !r.dnsExists && r.whois && r.whois.registered === false)) &&
         (r.sldLength + r.tldLength) <= MAX_TOTAL_LENGTH
     );
 }
