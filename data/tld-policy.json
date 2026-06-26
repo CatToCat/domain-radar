@@ -1,5 +1,5 @@
 {
-  "_comment": "Cloudflare Registrar policy. Only TLDs that Cloudflare supports for PROGRAMMATIC registration can be authoritatively confirmed via the domain-check API, so scanning is restricted to this set. Source: Cloudflare Domain Research / Registrar API 'Supported extensions' for programmatic registration. Edit 'supported' to tune; 'restricted' and 'premiumHeavy' are retained for backward compatibility but no longer drive filtering (the 'supported' allowlist does).",
+  "_comment": "TLDs Cloudflare Registrar supports for PROGRAMMATIC registration via the domain-check / registrations API. Only these can be authoritatively confirmed and registered programmatically, so scanning is restricted to this set. The scanner further filters by config tld.length (default 3). Source: Cloudflare Registrar API 'Supported extensions'.",
   "supported": [
     "com",
     "org",
@@ -42,5 +42,5 @@
     "academy",
     "today"
   ],
-  "_note": "TLDs not in 'supported' are excluded from scanning entirely: Cloudflare cannot programmatically register them, so a scan cannot confirm registerability. Register unsupported extensions via the Cloudflare dashboard if needed."
+  "_note": "TLDs not in 'supported' cannot be programmatically confirmed/registered and are excluded from scanning. Register unsupported extensions via the Cloudflare dashboard. 3-char TLDs (the default scan target) in this list: com, org, net, app, dev, xyz, pro, fyi, run, day, ing, icu."
 }

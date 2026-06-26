@@ -4,11 +4,11 @@ const CHARSETS = {
     mixed: 'abcdefghijklmnopqrstuvwxyz0123456789'.split('')
 };
 
-function generateSLDs(maxLength, mode, options = {}) {
-    const { minLength = 1 } = options;
+// Generate every SLD combination for the given character set, for lengths in
+// [minLength, maxLength]. Returned grouped is convenient for sharding by length.
+function generateSLDs(minLength, maxLength, mode) {
     const chars = CHARSETS[mode] || CHARSETS.mixed;
     const results = [];
-
     const start = Math.max(1, minLength);
     for (let len = start; len <= maxLength; len++) {
         const total = Math.pow(chars.length, len);
@@ -22,8 +22,12 @@ function generateSLDs(maxLength, mode, options = {}) {
             results.push(combo);
         }
     }
-
     return results;
+}
+
+// Generate SLDs for a single length only (used when sharding by length).
+function generateSLDsOfLength(length, mode) {
+    return generateSLDs(length, length, mode);
 }
 
 function generateDomains(slds, tlds) {
@@ -36,21 +40,27 @@ function generateDomains(slds, tlds) {
     return domains;
 }
 
-// Keep only TLDs Cloudflare supports for programmatic registration (the
-// 'supported' allowlist in tld-policy.json). Other TLDs cannot be
-// authoritatively confirmed as registerable, so scanning them is pointless.
-// Falls back to the legacy 'restricted' blocklist if no allowlist is present.
-function filterTldsByPolicy(tlds, policy = {}) {
-    if (Array.isArray(policy.supported) && policy.supported.length > 0) {
-        const supported = new Set(policy.supported);
-        const kept = tlds.filter(t => supported.has(t));
-        const removed = tlds.filter(t => !supported.has(t));
-        return { kept, removed };
+// Keep only TLDs that (a) Cloudflare supports for programmatic registration
+// (the 'supported' allowlist in tld-policy.json) and (b) have exactly the
+// configured character length. Only these can be authoritatively confirmed and
+// registered via the Cloudflare domain-check / registrations API.
+function filterTlds(tlds, policy = {}, tldLength = null) {
+    const supported = Array.isArray(policy.supported) ? new Set(policy.supported) : null;
+    const kept = [];
+    const removed = [];
+    for (const t of tlds) {
+        const okPolicy = supported ? supported.has(t) : true;
+        const okLength = tldLength == null ? true : t.length === tldLength;
+        if (okPolicy && okLength) kept.push(t);
+        else removed.push(t);
     }
-    const restricted = new Set(policy.restricted || []);
-    const kept = tlds.filter(t => !restricted.has(t));
-    const removed = tlds.filter(t => restricted.has(t));
     return { kept, removed };
 }
 
-module.exports = { generateSLDs, generateDomains, filterTldsByPolicy, CHARSETS };
+module.exports = {
+    generateSLDs,
+    generateSLDsOfLength,
+    generateDomains,
+    filterTlds,
+    CHARSETS
+};

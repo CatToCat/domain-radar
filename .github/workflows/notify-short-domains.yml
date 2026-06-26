@@ -1,19 +1,14 @@
 name: Notify Short Domains
 
 on:
-  # Run automatically after the daily availability check finishes successfully.
-  workflow_run:
-    workflows: ["Domain Availability Check"]
-    types:
-      - completed
-  # Allow manual runs from the Actions tab.
+  # NOTE: Disabled automatic trigger during the v3 refactor. The notifier still
+  # expects the legacy result format; re-enable the workflow_run trigger once it
+  # is adapted to the new { domain, price } output. Manual runs only for now.
   workflow_dispatch:
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    # When triggered by workflow_run, only proceed if the upstream run succeeded.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
       issues: write
