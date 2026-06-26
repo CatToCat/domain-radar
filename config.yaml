@@ -1,63 +1,26 @@
+# Domain Radar v3 configuration.
+#
+# Strategy: enumerate short SLDs (digits + letters) under the 3-character TLDs
+# that Cloudflare Registrar supports for PROGRAMMATIC registration, then confirm
+# real availability + price via Cloudflare's domain-check API. Only registerable
+# ("available") domains are kept.
+
 sld:
-  length: 2
-  minLength: 2    # skip SLDs shorter than this (1-char domains are almost always registry-reserved)
-  mode: mixed     # digits | alpha | mixed
+  minLength: 2    # skip 1-char SLDs (registries almost always reserve them)
+  maxLength: 3    # enumerate SLDs up to this many characters
+  mode: mixed     # digits | alpha | mixed (mixed = a-z 0-9, 36 chars)
 
 tld:
-  length: 10      # max TLD length to include (CF-supported TLDs range up to ~9 chars)
-
-# TLDs to scan. Restricted to extensions Cloudflare supports for PROGRAMMATIC
-# registration, so that the Cloudflare domain-check stage can authoritatively
-# confirm whether each domain is registerable. See data/tld-policy.json.
-# Editing this list: only add TLDs present in tld-policy.json "supported".
-tlds:
-  - com
-  - org
-  - net
-  - app
-  - dev
-  - cc
-  - xyz
-  - info
-  - cloud
-  - studio
-  - live
-  - link
-  - pro
-  - tech
-  - fyi
-  - shop
-  - online
-  - tools
-  - run
-  - games
-  - build
-  - systems
-  - world
-  - news
-  - site
-  - network
-  - chat
-  - space
-  - family
-  - page
-  - life
-  - group
-  - email
-  - solutions
-  - day
-  - blog
-  - ing
-  - icu
-  - academy
-  - today
+  length: 3       # only include TLDs with exactly this many characters
 
 scanner:
-  dnsConcurrency: 50
-  rdapConcurrency: 20
-  whoisConcurrency: 10
-  whoisDelay: 500
-  whoisRetries: 3
-  cloudflareConcurrency: 3   # parallel Cloudflare domain-check batches (Stage 4)
-  cloudflareBatchSize: 20    # domains per domain-check request (CF max is 20)
-  cloudflareDelay: 200       # delay between Cloudflare batches (ms)
+  dnsConcurrency: 50          # parallel DNS pre-filter lookups
+  cloudflareConcurrency: 3    # parallel Cloudflare domain-check batches
+  cloudflareBatchSize: 20     # domains per domain-check request (CF max is 20)
+  cloudflareDelay: 200        # delay between Cloudflare batches (ms)
+
+  # Sharding: a scan run processes at most this many shards, where each shard is
+  # one (TLD, SLD-length) pair. Progress is tracked in data/scan-progress.json so
+  # successive runs continue where the last left off. Set to 0 to run all shards
+  # in a single pass.
+  shardsPerRun: 0

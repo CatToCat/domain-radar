@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <title>Domain Radar - Short Domain Scanner</title>
+    <title>Domain Radar - Available Short Domains</title>
     <style>
         :root {
             --bg: #f5f5f7;
@@ -14,15 +14,11 @@
             --border: rgba(0, 0, 0, 0.06);
             --accent: #0071e3;
             --green: #34c759;
-            --red: #ff3b30;
-            --orange: #ff9500;
-            --purple: #af52de;
             --radius: 16px;
             --radius-sm: 10px;
             --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             --blur: blur(20px) saturate(180%);
         }
-
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg: #000000;
@@ -33,9 +29,7 @@
                 --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
             }
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
             background: var(--bg);
@@ -43,313 +37,110 @@
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
-
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 48px 24px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
+        .container { max-width: 1024px; margin: 0 auto; padding: 48px 24px; }
+        header { text-align: center; margin-bottom: 32px; }
         header h1 {
-            font-size: 48px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #0071e3, #af52de);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 44px; font-weight: 700; letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #0071e3, #34c759);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-
-        header p {
-            color: var(--text-secondary);
-            font-size: 17px;
-            margin-top: 8px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
+        header h1 img { height: 1em; vertical-align: -0.1em; margin-right: 8px; }
 
         .stat-card {
-            background: var(--card-bg);
-            backdrop-filter: var(--blur);
-            -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            text-align: center;
-            box-shadow: var(--shadow);
-            transition: transform 0.2s ease;
+            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px; text-align: center; box-shadow: var(--shadow);
+            max-width: 280px; margin: 0 auto 16px;
         }
+        .stat-card .value { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; color: var(--green); }
+        .stat-card .label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
 
-        .stat-card:hover { transform: translateY(-2px); }
-
-        .stat-card .value {
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .stat-card .label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-top: 4px;
-        }
-
-        .stat-card.total .value { color: var(--accent); }
-        .stat-card.available .value { color: var(--green); }
-        .stat-card.registered .value { color: var(--red); }
-        .stat-card.dns .value { color: var(--orange); }
-        .stat-card.error .value { color: var(--purple); }
+        .meta { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 28px; }
 
         .toolbar {
-            background: var(--card-bg);
-            backdrop-filter: var(--blur);
-            -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
+            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow);
+            display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: center;
         }
-
-        .toolbar label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .toolbar select,
-        .toolbar input[type="text"] {
-            appearance: none;
-            -webkit-appearance: none;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 10px 14px;
-            font-size: 14px;
-            color: var(--text);
-            font-family: inherit;
-            min-width: 140px;
-            transition: border-color 0.2s;
-        }
-
-        .toolbar select:focus,
-        .toolbar input[type="text"]:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .toolbar label { font-size: 12px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
         .toolbar select {
-            padding-right: 32px;
+            appearance: none; -webkit-appearance: none;
+            background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            padding: 10px 32px 10px 14px; font-size: 14px; color: var(--text); font-family: inherit; min-width: 150px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2386868b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
+            background-repeat: no-repeat; background-position: right 12px center;
         }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+        .toolbar select:focus { outline: none; border-color: var(--accent); }
+        .btn-query {
+            background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm);
+            padding: 11px 28px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+            transition: opacity 0.2s;
         }
+        .btn-query:hover { opacity: 0.9; }
 
         .table-container {
-            background: var(--card-bg);
-            backdrop-filter: var(--blur);
-            -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
+            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
         }
-
-        .table-scroll {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 15px; }
         th {
-            padding: 14px 16px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-            background: var(--card-bg);
+            padding: 14px 20px; text-align: left; font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);
+            border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+            position: sticky; top: 0; background: var(--card-bg);
         }
-
         th:hover { color: var(--accent); }
         th .sort-icon { margin-left: 4px; opacity: 0.5; }
-        th.sorted .sort-icon { opacity: 1; color: var(--accent); }
-
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-        }
-
+        td { padding: 13px 20px; border-bottom: 1px solid var(--border); }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(0, 113, 227, 0.04); }
+        tr:hover td { background: rgba(52, 199, 89, 0.05); }
+        .price { font-variant-numeric: tabular-nums; }
 
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .badge-available { background: rgba(52, 199, 89, 0.12); color: var(--green); }
-        .badge-premium { background: rgba(255, 204, 0, 0.14); color: #b8860b; }
-        .badge-reserved { background: rgba(142, 142, 147, 0.16); color: #6e6e73; }
-        .badge-registered { background: rgba(255, 59, 48, 0.12); color: var(--red); }
-        .badge-dns { background: rgba(255, 149, 0, 0.12); color: var(--orange); }
-        .badge-error { background: rgba(175, 82, 222, 0.12); color: var(--purple); }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            padding: 20px;
-        }
-
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; }
         .pagination button {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 8px 16px;
-            font-size: 14px;
-            color: var(--text);
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s;
+            background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            padding: 8px 16px; font-size: 14px; color: var(--text); cursor: pointer; font-family: inherit; transition: all 0.2s;
         }
-
-        .pagination button:hover:not(:disabled) {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
+        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
         .pagination button:disabled { opacity: 0.3; cursor: default; }
         .pagination .page-info { font-size: 13px; color: var(--text-secondary); }
 
-        .empty-state {
-            text-align: center;
-            padding: 80px 24px;
-            color: var(--text-secondary);
-        }
+        .empty-state { text-align: center; padding: 60px 24px; color: var(--text-secondary); }
+        .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
 
-        .empty-state h3 { font-size: 20px; margin-bottom: 8px; color: var(--text); }
-
-        .config-info {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 24px;
-            justify-content: center;
-        }
-
-        .config-tag {
-            background: var(--card-bg);
-            backdrop-filter: var(--blur);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        @media (max-width: 768px) {
+        @media (max-width: 640px) {
             .container { padding: 24px 16px; }
-            header h1 { font-size: 32px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            header h1 { font-size: 30px; }
             .toolbar { padding: 16px; }
-            .filter-group { width: 100%; }
-            .toolbar select, .toolbar input[type="text"] { width: 100%; }
-            th, td { padding: 10px 12px; }
+            .filter-group, .toolbar select, .btn-query { width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><img src="./favicon.svg" alt="" style="height:1em;vertical-align:-0.1em;margin-right:8px">Domain Radar</h1>
+            <h1><img src="./favicon.svg" alt="">Domain Radar</h1>
         </header>
 
-        <div class="config-info" id="config-info"></div>
-
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card total"><div class="value" id="stat-total">-</div><div class="label">Total</div></div>
-            <div class="stat-card available"><div class="value" id="stat-available">-</div><div class="label">Available</div></div>
-            <div class="stat-card registered"><div class="value" id="stat-registered">-</div><div class="label">Registered</div></div>
-            <div class="stat-card error"><div class="value" id="stat-error">-</div><div class="label">Error</div></div>
+        <div class="stat-card">
+            <div class="value" id="stat-available">-</div>
+            <div class="label">Available Domains</div>
         </div>
+        <div class="meta" id="meta"></div>
 
         <div class="toolbar">
             <div class="filter-group">
-                <label>Date</label>
-                <select id="filter-date"></select>
-            </div>
-            <div class="filter-group">
-                <label>Status</label>
-                <select id="filter-status">
-                    <option value="all">All</option>
-                    <option value="available">Available</option>
-                    <option value="premium">Premium</option>
-                    <option value="reserved">Reserved</option>
-                    <option value="unsupported">Unsupported</option>
-                    <option value="registered-dns">Registered (DNS)</option>
-                    <option value="registered-rdap">Registered (RDAP)</option>
-                    <option value="registered-whois">Registered (WHOIS)</option>
-                    <option value="error">Error</option>
-                </select>
-            </div>
-            <div class="filter-group">
                 <label>TLD</label>
-                <select id="filter-tld">
-                    <option value="all">All</option>
-                </select>
+                <select id="filter-tld"><option value="all">All TLDs</option></select>
             </div>
             <div class="filter-group">
-                <label>Mode</label>
-                <select id="filter-mode">
-                    <option value="all">All</option>
-                    <option value="alpha">Alpha</option>
-                    <option value="digits">Digits</option>
-                    <option value="mixed">Mixed</option>
-                </select>
+                <label>SLD Length</label>
+                <select id="filter-length"><option value="all">All Lengths</option></select>
             </div>
-            <div class="filter-group">
-                <label>Search</label>
-                <input type="text" id="filter-search" placeholder="Search domain...">
-            </div>
+            <button class="btn-query" id="btn-query">Query</button>
         </div>
 
         <div class="table-container">
@@ -358,14 +149,7 @@
                     <thead>
                         <tr>
                             <th data-sort="domain">Domain <span class="sort-icon"></span></th>
-                            <th data-sort="sld">SLD <span class="sort-icon"></span></th>
-                            <th data-sort="tld">TLD <span class="sort-icon"></span></th>
-                            <th data-sort="sldLength">SLD Len <span class="sort-icon"></span></th>
-                            <th data-sort="tldLength">TLD Len <span class="sort-icon"></span></th>
-                            <th data-sort="mode">Mode <span class="sort-icon"></span></th>
-                            <th data-sort="status">Status <span class="sort-icon"></span></th>
-                            <th data-sort="detail">Detail <span class="sort-icon"></span></th>
-                            <th data-sort="timestamp">Time <span class="sort-icon"></span></th>
+                            <th data-sort="price">Pricing <span class="sort-icon"></span></th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
@@ -380,35 +164,19 @@
     </div>
 
     <script>
-        const PAGE_SIZE = 200;
+        const PAGE_SIZE = 100;
         let allData = [];
         let filteredData = [];
         let currentPage = 1;
         let sortKey = 'domain';
         let sortDir = 'asc';
 
-        function formatTime(dateStr) {
-            const d = new Date(dateStr);
-            if (isNaN(d)) return '-';
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            let h = d.getHours();
-            const min = String(d.getMinutes()).padStart(2, '0');
-            const sec = String(d.getSeconds()).padStart(2, '0');
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12 || 12;
-            return `${yyyy}/${mm}/${dd} ${String(h).padStart(2, '0')}:${min}:${sec} ${ampm}`;
-        }
-
         async function loadManifest() {
             try {
                 const res = await fetch('./results/manifest.json');
-                if (!res.ok) throw new Error('No data');
+                if (!res.ok) throw new Error('no manifest');
                 return await res.json();
-            } catch {
-                return { files: [] };
-            }
+            } catch { return null; }
         }
 
         async function loadData(filename) {
@@ -416,74 +184,43 @@
             return await res.json();
         }
 
-        function getStatus(item) {
-            // Prefer the authoritative `status` field (set after Cloudflare
-            // confirmation). Fall back to legacy derivation for old result files.
-            if (item.status) {
-                if (item.status === 'registered') {
-                    const detail = (item.whois && item.whois.detail || '').toLowerCase();
-                    if (item.dnsExists) return 'registered-dns';
-                    if (detail.includes('rdap')) return 'registered-rdap';
-                    if (detail.includes('whois')) return 'registered-whois';
-                    return 'registered-dns';
-                }
-                if (item.status === 'unknown') return 'error';
-                return item.status; // 'available' | 'premium' | 'reserved' | 'unsupported'
-            }
-            if (item.dnsExists) return 'registered-dns';
-            if (!item.whois) return 'error';
-            if (item.whois.registered === false) return 'available';
-            if (item.whois.registered === null) return 'error';
-            const detail = (item.whois.detail || '').toLowerCase();
-            if (detail.includes('rdap')) return 'registered-rdap';
-            if (detail.includes('whois')) return 'registered-whois';
-            return 'registered-dns';
+        function formatPrice(item) {
+            if (item.price == null) return '-';
+            const cur = item.currency || 'USD';
+            const sym = cur === 'USD' ? '$' : (cur === 'EUR' ? '\u20AC' : (cur === 'GBP' ? '\u00A3' : ''));
+            return `${sym}${item.price}${sym ? '' : ' ' + cur}/yr`;
         }
 
-        function getStatusBadge(status) {
-            const labels = {
-                'available': 'Available',
-                'premium': 'Premium',
-                'reserved': 'Reserved',
-                'unsupported': 'Unsupported',
-                'registered-dns': 'Registered (DNS)',
-                'registered-rdap': 'Registered (RDAP)',
-                'registered-whois': 'Registered (WHOIS)',
-                'error': 'Error'
-            };
-            const classes = {
-                'available': 'badge-available',
-                'premium': 'badge-premium',
-                'reserved': 'badge-reserved',
-                'unsupported': 'badge-reserved',
-                'registered-dns': 'badge-dns',
-                'registered-rdap': 'badge-registered',
-                'registered-whois': 'badge-registered',
-                'error': 'badge-error'
-            };
-            return `<span class="badge ${classes[status]}">${labels[status]}</span>`;
+        function populateFilters(data) {
+            const tlds = [...new Set(data.map(d => d.domain.split('.').pop()))].sort();
+            const tldSel = document.getElementById('filter-tld');
+            tldSel.innerHTML = '<option value="all">All TLDs</option>' +
+                tlds.map(t => `<option value="${t}">.${t}</option>`).join('');
+
+            const lengths = [...new Set(data.map(d => d.domain.split('.')[0].length))].sort((a, b) => a - b);
+            const lenSel = document.getElementById('filter-length');
+            lenSel.innerHTML = '<option value="all">All Lengths</option>' +
+                lengths.map(l => `<option value="${l}">${l} chars</option>`).join('');
         }
 
         function applyFilters() {
-            const status = document.getElementById('filter-status').value;
             const tld = document.getElementById('filter-tld').value;
-            const mode = document.getElementById('filter-mode').value;
-            const search = document.getElementById('filter-search').value.toLowerCase();
+            const len = document.getElementById('filter-length').value;
 
             filteredData = allData.filter(item => {
-                const itemStatus = getStatus(item);
-                if (status !== 'all' && itemStatus !== status) return false;
-                if (tld !== 'all' && item.tld !== tld) return false;
-                if (mode !== 'all' && item.mode !== mode) return false;
-                if (search && !item.domain.includes(search) && !item.sld.includes(search)) return false;
+                const itemTld = item.domain.split('.').pop();
+                const itemLen = item.domain.split('.')[0].length;
+                if (tld !== 'all' && itemTld !== tld) return false;
+                if (len !== 'all' && String(itemLen) !== len) return false;
                 return true;
             });
 
             filteredData.sort((a, b) => {
                 let av = a[sortKey], bv = b[sortKey];
-                if (sortKey === 'status') { av = getStatus(a); bv = getStatus(b); }
-                if (sortKey === 'detail') { av = a.whois?.detail || ''; bv = b.whois?.detail || ''; }
-                if (typeof av === 'number') return sortDir === 'asc' ? av - bv : bv - av;
+                if (sortKey === 'price') {
+                    av = parseFloat(a.price) || 0; bv = parseFloat(b.price) || 0;
+                    return sortDir === 'asc' ? av - bv : bv - av;
+                }
                 return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
             });
 
@@ -498,24 +235,12 @@
 
             const tbody = document.getElementById('table-body');
             if (page.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-secondary)">No results found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:40px;color:var(--text-secondary)">No available domains match.</td></tr>';
             } else {
-                tbody.innerHTML = page.map(item => {
-                    const status = getStatus(item);
-                    const detail = item.whois?.detail || (item.dnsExists ? 'DNS resolved' : '-');
-                    const time = item.timestamp ? formatTime(item.timestamp) : '-';
-                    return `<tr>
-                        <td><strong>${item.domain}</strong></td>
-                        <td>${item.sld}</td>
-                        <td>.${item.tld}</td>
-                        <td>${item.sldLength}</td>
-                        <td>${item.tldLength}</td>
-                        <td>${item.mode}</td>
-                        <td>${getStatusBadge(status)}</td>
-                        <td>${detail}</td>
-                        <td>${time}</td>
-                    </tr>`;
-                }).join('');
+                tbody.innerHTML = page.map(item => `<tr>
+                    <td><strong>${item.domain}</strong></td>
+                    <td class="price">${formatPrice(item)}</td>
+                </tr>`).join('');
             }
 
             document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages} (${filteredData.length} results)`;
@@ -523,85 +248,43 @@
             document.getElementById('btn-next').disabled = currentPage >= totalPages;
 
             document.querySelectorAll('th[data-sort]').forEach(th => {
-                th.classList.toggle('sorted', th.dataset.sort === sortKey);
                 const icon = th.querySelector('.sort-icon');
-                icon.textContent = th.dataset.sort === sortKey ? (sortDir === 'asc' ? '↑' : '↓') : '';
+                icon.textContent = th.dataset.sort === sortKey ? (sortDir === 'asc' ? '\u2191' : '\u2193') : '';
             });
-        }
-
-        function updateStats(data) {
-            const results = data.results || [];
-            const total = results.length;
-            const available = results.filter(r => getStatus(r) === 'available').length;
-            const registered = results.filter(r => getStatus(r).startsWith('registered')).length;
-            const error = results.filter(r => getStatus(r) === 'error').length;
-
-            document.getElementById('stat-total').textContent = total.toLocaleString();
-            document.getElementById('stat-available').textContent = available.toLocaleString();
-            document.getElementById('stat-registered').textContent = registered.toLocaleString();
-            document.getElementById('stat-error').textContent = error.toLocaleString();
-
-            const config = data.config || {};
-            const tags = [];
-            if (config.sldLength) tags.push(`SLD ≤ ${config.sldLength} chars`);
-            if (config.sldMode) tags.push(`Mode: ${config.sldMode}`);
-            if (config.tldCount) tags.push(`TLDs: ${config.tldCount}`);
-            if (data.startTime) tags.push(`Scan: ${formatTime(data.startTime)}`);
-            document.getElementById('config-info').innerHTML = tags.map(t => `<span class="config-tag">${t}</span>`).join('');
-        }
-
-        function populateTLDFilter(results) {
-            const tlds = [...new Set(results.map(r => r.tld))].sort();
-            const select = document.getElementById('filter-tld');
-            select.innerHTML = '<option value="all">All</option>' + tlds.map(t => `<option value="${t}">.${t}</option>`).join('');
         }
 
         async function init() {
             const manifest = await loadManifest();
-
-            if (manifest.files.length === 0) {
-                document.getElementById('table-body').innerHTML = '<tr><td colspan="9"><div class="empty-state"><h3>No scan data yet</h3><p>Run the scanner to generate results.</p></div></td></tr>';
+            if (!manifest) {
+                document.getElementById('table-body').innerHTML =
+                    '<tr><td colspan="2"><div class="empty-state"><h3>No scan data yet</h3><p>Run the scanner to generate results.</p></div></td></tr>';
                 return;
             }
 
-            const dateSelect = document.getElementById('filter-date');
-            dateSelect.innerHTML = manifest.files.map(f => {
-                const label = formatTime(f.date + 'T' + f.filename.split('_')[1].replace('.json', '').replace(/(\d{2})(\d{2})(\d{2})/, '$1:$2:$3'));
-                return `<option value="${f.filename}">${label}</option>`;
-            }).join('');
+            const data = await loadData(manifest.latest || 'domains.json');
+            allData = data.results || [];
 
-            async function loadSelected() {
-                const filename = dateSelect.value;
-                const data = await loadData(filename);
-                allData = data.results || [];
-                updateStats(data);
-                populateTLDFilter(allData);
-                applyFilters();
-            }
+            document.getElementById('stat-available').textContent = (allData.length).toLocaleString();
 
-            dateSelect.addEventListener('change', loadSelected);
-            await loadSelected();
+            const metaParts = [];
+            if (data.generatedAt) metaParts.push('Updated: ' + new Date(data.generatedAt).toLocaleString());
+            if (manifest.progress) metaParts.push(`Scanned ${manifest.progress.shardsDone}/${manifest.progress.shardsTotal} shards${manifest.progress.complete ? ' (complete)' : ''}`);
+            document.getElementById('meta').textContent = metaParts.join('  \u00B7  ');
+
+            populateFilters(allData);
+            applyFilters();
         }
 
-        // Event listeners
-        document.getElementById('filter-status').addEventListener('change', applyFilters);
-        document.getElementById('filter-tld').addEventListener('change', applyFilters);
-        document.getElementById('filter-mode').addEventListener('change', applyFilters);
-        document.getElementById('filter-search').addEventListener('input', applyFilters);
-
+        document.getElementById('btn-query').addEventListener('click', applyFilters);
         document.getElementById('btn-prev').addEventListener('click', () => { currentPage--; render(); });
         document.getElementById('btn-next').addEventListener('click', () => { currentPage++; render(); });
 
         document.querySelectorAll('th[data-sort]').forEach(th => {
             th.addEventListener('click', () => {
                 const key = th.dataset.sort;
-                if (sortKey === key) {
-                    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortKey = key;
-                    sortDir = 'asc';
-                }
-                applyFilters();
+                if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                else { sortKey = key; sortDir = 'asc'; }
+                render();
             });
         });
 

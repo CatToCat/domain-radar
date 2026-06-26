@@ -1,74 +1,66 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
+const { generateSLDs, filterTlds } = require('../lib/domain-list-generator');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, 'config.yaml');
-const RESULTS_DIR = path.join(ROOT, 'public', 'results');
-const DOMAINS_PATH = path.join(RESULTS_DIR, 'domains.json');
-const TLD_CACHE_PATH = path.join(ROOT, 'data', 'tld-cache.json');
+const TLD_POLICY_PATH = path.join(ROOT, 'data', 'tld-policy.json');
 
 function formatDuration(sec) {
+    sec = Math.ceil(sec);
     if (sec < 60) return `${sec}s`;
     if (sec < 3600) return `${Math.floor(sec / 60)}m ${sec % 60}s`;
     return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
 }
 
 function main() {
-    if (!fs.existsSync(DOMAINS_PATH)) {
-        console.error('No domain list found. Run "npm run generate-domain-list" first.');
-        process.exit(1);
-    }
-
-    const domainsData = JSON.parse(fs.readFileSync(DOMAINS_PATH, 'utf8'));
     const config = yaml.load(fs.readFileSync(CONFIG_PATH, 'utf8'));
-
-    let tldCache = { rdapUnsupported: [], whoisUnsupported: [] };
-    if (fs.existsSync(TLD_CACHE_PATH)) {
-        try { tldCache = JSON.parse(fs.readFileSync(TLD_CACHE_PATH, 'utf8')); } catch {}
+    let policy = { supported: [] };
+    if (fs.existsSync(TLD_POLICY_PATH)) {
+        try { policy = JSON.parse(fs.readFileSync(TLD_POLICY_PATH, 'utf8')); } catch {}
     }
 
-    const totalDomains = domainsData.domains.length;
+    const minLen = config.sld?.minLength ?? 2;
+    const maxLen = config.sld?.maxLength ?? 3;
+    const mode = config.sld?.mode || 'mixed';
+    const tldLength = config.tld?.length ?? 3;
+
+    const { kept: tlds } = filterTlds(policy.supported || [], policy, tldLength);
+    const sldCount = generateSLDs(minLen, maxLen, mode).length;
+    const total = sldCount * tlds.length;
+
     const dnsConcurrency = config.scanner.dnsConcurrency || 50;
-    const rdapConcurrency = config.scanner.rdapConcurrency || 20;
-    const whoisConcurrency = config.scanner.whoisConcurrency || 10;
-    const whoisDelay = config.scanner.whoisDelay || 500;
+    const cfConcurrency = config.scanner.cloudflareConcurrency || 3;
+    const cfBatchSize = config.scanner.cloudflareBatchSize || 20;
+    const cfDelay = (config.scanner.cloudflareDelay || 0) / 1000;
 
-    const rdapUnsupportedSet = new Set(tldCache.rdapUnsupported || []);
-    const whoisUnsupportedSet = new Set(tldCache.whoisUnsupported || []);
+    // DNS: ~6ms each, divided by concurrency.
+    const dnsEstSec = (total * 0.006) / Math.max(1, dnsConcurrency / 10);
 
-    // DNS estimate
-    const dnsEstSec = Math.ceil(totalDomains * 0.006);
+    // Assume ~60% of these short domains resolve (already registered) and are
+    // filtered out; the rest hit Cloudflare. Each batch ~0.5s + configured delay.
+    const candidateRatio = 0.4;
+    const candidates = Math.ceil(total * candidateRatio);
+    const cfBatches = Math.ceil(candidates / cfBatchSize);
+    const cfEstSec = (cfBatches * (0.5 + cfDelay)) / Math.max(1, cfConcurrency);
 
-    // RDAP estimate
-    const dnsNotFoundRatio = 0.58;
-    const rdapNeedCount = Math.ceil(totalDomains * dnsNotFoundRatio);
-    const rdapSkipDomains = domainsData.domains.filter(d => rdapUnsupportedSet.has(d.tld)).length;
-    const rdapCheckCount = Math.max(0, Math.ceil(rdapNeedCount - rdapSkipDomains * dnsNotFoundRatio));
-    const rdapEstSec = Math.ceil(rdapCheckCount * 0.08);
-
-    // WHOIS estimate
-    const rdapResolveRatio = 0.83;
-    const whoisFromRdap = Math.ceil(rdapCheckCount * (1 - rdapResolveRatio));
-    const whoisFromSkip = Math.ceil(rdapSkipDomains * dnsNotFoundRatio);
-    const whoisNeedCount = whoisFromRdap + whoisFromSkip;
-    const whoisSkipDomains = domainsData.domains.filter(d => whoisUnsupportedSet.has(d.tld)).length;
-    const whoisCheckCount = Math.max(0, whoisNeedCount - Math.ceil(whoisSkipDomains * dnsNotFoundRatio));
-    const whoisEstSec = Math.ceil((whoisCheckCount * (whoisDelay / 1000 + 1)) / whoisConcurrency);
-
-    const totalEstSec = dnsEstSec + rdapEstSec + whoisEstSec;
+    const totalEstSec = dnsEstSec + cfEstSec;
 
     console.log('');
-    console.log('┌──────────┬──────────┬────────────┬──────────────┐');
-    console.log('│ Stage    │ Domains  │ Concurrency│ Est. Time    │');
-    console.log('├──────────┼──────────┼────────────┼──────────────┤');
-    console.log(`│ DNS      │ ${String(totalDomains).padStart(8)} │ ${String(dnsConcurrency).padStart(10)} │ ${formatDuration(dnsEstSec).padStart(12)} │`);
-    console.log(`│ RDAP     │ ${String(rdapCheckCount).padStart(8)} │ ${String(rdapConcurrency).padStart(10)} │ ${formatDuration(rdapEstSec).padStart(12)} │`);
-    console.log(`│ WHOIS    │ ${String(whoisCheckCount).padStart(8)} │ ${String(whoisConcurrency).padStart(10)} │ ${formatDuration(whoisEstSec).padStart(12)} │`);
-    console.log('├──────────┼──────────┼────────────┼──────────────┤');
-    console.log(`│ Total    │ ${String(totalDomains).padStart(8)} │          - │ ${formatDuration(totalEstSec).padStart(12)} │`);
-    console.log('└──────────┴──────────┴────────────┴──────────────┘');
+    console.log(`SLD ${minLen}-${maxLen} chars (${mode}), TLD length ${tldLength}`);
+    console.log(`TLDs (${tlds.length}): ${tlds.join(', ')}`);
     console.log('');
+    console.log('\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510');
+    console.log('\u2502 Stage    \u2502 Count    \u2502 Est. Time    \u2502');
+    console.log('\u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524');
+    console.log(`\u2502 DNS      \u2502 ${String(total).padStart(8)} \u2502 ${formatDuration(dnsEstSec).padStart(12)} \u2502`);
+    console.log(`\u2502 CF check \u2502 ${String(candidates).padStart(8)} \u2502 ${formatDuration(cfEstSec).padStart(12)} \u2502`);
+    console.log('\u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524');
+    console.log(`\u2502 Total    \u2502 ${String(total).padStart(8)} \u2502 ${formatDuration(totalEstSec).padStart(12)} \u2502`);
+    console.log('\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518');
+    console.log('');
+    console.log('(Estimates are rough; candidate ratio and CF rate limits vary.)');
 }
 
 main();

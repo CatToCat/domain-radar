@@ -1,72 +1,7 @@
 {
-  "files": [
-    {
-      "filename": "2026-06-25_193255.json",
-      "date": "2026-06-25",
-      "config": {
-        "sldLength": 2,
-        "sldMinLength": 2,
-        "sldMode": "mixed",
-        "tldCount": 40
-      },
-      "summary": {
-        "total": 51840,
-        "dnsExists": 19026,
-        "available": 3468,
-        "premium": 2734,
-        "reserved": 0,
-        "registered": 20906,
-        "unsupported": 0,
-        "error": 24732
-      }
-    },
-    {
-      "filename": "2026-06-25_064009.json",
-      "date": "2026-06-25",
-      "config": {
-        "sldLength": 2,
-        "sldMode": "mixed",
-        "tldCount": 39
-      },
-      "summary": {
-        "total": 51948,
-        "dnsExists": 25662,
-        "available": 22431,
-        "registered": 29517,
-        "error": 9853
-      }
-    },
-    {
-      "filename": "2026-06-24_075429.json",
-      "date": "2026-06-24",
-      "config": {
-        "sldLength": 2,
-        "sldMode": "mixed",
-        "tldCount": 117
-      },
-      "summary": {
-        "total": 155844,
-        "dnsExists": 65068,
-        "available": 81709,
-        "registered": 74135,
-        "error": 54952
-      }
-    },
-    {
-      "filename": "2026-06-23_161049.json",
-      "date": "2026-06-23",
-      "config": {
-        "sldLength": 2,
-        "sldMode": "mixed",
-        "tldCount": 117
-      },
-      "summary": {
-        "total": 155844,
-        "dnsExists": 65135,
-        "available": 81428,
-        "registered": 74416,
-        "error": 54281
-      }
-    }
-  ]
+  "latest": "domains.json",
+  "generatedAt": null,
+  "config": {},
+  "summary": { "available": 0 },
+  "progress": { "shardsDone": 0, "shardsTotal": 0, "complete": false }
 }

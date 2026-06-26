@@ -1,25 +1,17 @@
 {
   "name": "domain-radar",
-  "version": "2.0.0",
-  "description": "Automated short domain availability scanner with daily CI execution and static result viewer",
+  "version": "3.0.0",
+  "description": "Find registerable cheap short domains under Cloudflare-supported 3-char TLDs, with a static result viewer",
   "main": "src/cli/run-all.js",
   "type": "commonjs",
   "scripts": {
-
     "generate-domain-list": "node src/cli/generate-domain-list.js",
     "scan-availability": "node src/cli/scan-availability.js",
     "notify-short-domains": "node src/cli/notify-short-domains.js",
     "run-all": "node src/cli/run-all.js",
-
-    "estimate-scan-time": "node src/cli/estimate-scan-time.js",
-    "update-tld-cache": "node src/cli/update-tld-cache.js",
-
-    "test": "node test/test-scan-availability.js && node test/test-notify-short-domains.js",
-    "test:scan": "node test/test-scan-availability.js",
-    "test:notify": "node test/test-notify-short-domains.js"
+    "estimate-scan-time": "node src/cli/estimate-scan-time.js"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
-    "whoiser": "^1.15.0"
+    "js-yaml": "^4.1.0"
   }
 }

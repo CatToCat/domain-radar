@@ -1,126 +1,112 @@
 # Domain Radar
 
-Scan short domain availability across 125+ TLDs automatically. Combines DNS, RDAP, and WHOIS lookups to detect registration status, then presents results in a filterable static dashboard.
+Find **registerable, cheap short domains** under the 3-character TLDs Cloudflare
+Registrar supports for programmatic registration, then confirm real-time
+availability and pricing via Cloudflare. Only available domains are kept, and
+they are presented in a minimal static dashboard.
 
-## Features
+## How it works
 
-- Exhaustive enumeration of short domain combinations (digits, alpha, or mixed modes)
-- Multi-layer availability detection: DNS resolution → RDAP → WHOIS → Cloudflare domain-check
-- Distinguishes truly **registerable** domains from registry-reserved and premium ones, with pricing
-- TLD allowlist restricted to extensions Cloudflare can authoritatively confirm
-- Per-TLD concurrent WHOIS with configurable rate limiting
-- TLD cache to skip unsupported RDAP/WHOIS lookups (auto-updated monthly)
-- Static single-page result viewer with real-time filtering, sorting, and pagination
-- Execution time estimation before each scan
-- GitHub Actions daily scan with auto-commit results
-- Notification support for newly available domains
+1. **Enumerate** short SLDs (digits + letters, configurable length) under the
+   eligible TLDs.
+2. **DNS pre-filter** — domains that resolve are already registered and skipped
+   cheaply, before spending any Cloudflare API quota.
+3. **Cloudflare domain-check** — an authoritative, real-time registry check on
+   the remaining candidates. Only domains confirmed `registrable` at the
+   `standard` tier are kept (premium / reserved / taken are dropped).
+4. **Output** — each kept domain is stored as `{ domain, price, currency }` in
+   `public/results/domains.json`, viewable in `public/index.html`.
 
 ## Quick Start
 
 ```bash
 npm install
-npm run update-tld-cache   # Generate TLD support cache (first time)
-npm run run-all            # Run the full pipeline
+# Cloudflare credentials are required:
+$env:CLOUDFLARE_ACCOUNT_ID="..."   # PowerShell
+$env:CLOUDFLARE_API_TOKEN="..."
+npm run estimate-scan-time   # preview scope & rough time
+npm run scan-availability    # run the scan
 ```
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run generate-domain-list` | Generate domain combinations based on config |
-| `npm run scan-availability` | Scan generated domains for availability |
-| `npm run update-tld-cache` | Probe TLDs and update support cache |
-| `npm run notify-short-domains` | Send notifications for available domains |
-| `npm run run-all` | Run the full pipeline |
-| `npm test` | Run all tests |
+| `npm run generate-domain-list` | Preview the scan scope (TLDs, SLD counts, totals) |
+| `npm run estimate-scan-time` | Rough time estimate for a full scan |
+| `npm run scan-availability` | DNS pre-filter + Cloudflare confirmation |
+| `npm run run-all` | Alias for the scan |
 
 ## Configuration
 
-Edit `config.yaml` to customize scanning parameters:
+Edit `config.yaml`:
 
 ```yaml
 sld:
-  length: 2           # SLD character length
-  minLength: 2        # skip SLDs shorter than this (1-char are registry-reserved)
-  mode: mixed         # digits | alpha | mixed
+  minLength: 2    # skip 1-char SLDs (registry-reserved)
+  maxLength: 3    # enumerate up to this many characters
+  mode: mixed     # digits | alpha | mixed (mixed = a-z 0-9)
 
 tld:
-  length: 2           # Max TLD length to include
+  length: 3       # only TLDs with exactly this many characters
 
 scanner:
-  dnsConcurrency: 50  # Parallel DNS lookups
-  rdapConcurrency: 20 # Parallel RDAP queries
-  whoisConcurrency: 10 # Parallel TLD queues for WHOIS
-  whoisDelay: 500     # Delay between WHOIS calls per TLD (ms)
-  whoisRetries: 3     # Retry attempts on WHOIS failure
-  cloudflareConcurrency: 3 # Parallel Cloudflare domain-check batches
-  cloudflareBatchSize: 20  # Domains per domain-check request (CF max 20)
-  cloudflareDelay: 200     # Delay between Cloudflare batches (ms)
+  dnsConcurrency: 50
+  cloudflareConcurrency: 3
+  cloudflareBatchSize: 20    # CF max is 20 per request
+  cloudflareDelay: 200       # ms between batches
+  shardsPerRun: 0            # max shards per run (0 = all). See Sharding.
 ```
 
-## Availability Status
+## Eligible TLDs
 
-Each result carries an authoritative `status`:
+`data/tld-policy.json` lists the TLDs Cloudflare supports for programmatic
+registration. The scanner keeps only those whose length equals `tld.length`.
+With the default `tld.length: 3`, the eligible TLDs are:
 
-| Status | Meaning | In notifications? |
-|--------|---------|-------------------|
-| `available` | Registerable at standard price (Cloudflare confirmed) | Yes |
-| `premium` | Registerable but premium-priced | No (flagged) |
-| `reserved` | Registry-reserved / unavailable | No |
-| `unsupported` | TLD not checkable via Cloudflare | No |
-| `registered` | Already taken | No |
-| `unknown` | Could not determine | No |
+`com, org, net, app, dev, xyz, pro, fyi, run, day, ing, icu` (12 TLDs)
 
-RDAP/WHOIS can only tell whether a domain is *in the registry* — they cannot
-distinguish reserved/premium from freely registerable. The **Cloudflare
-domain-check stage** performs an authoritative, real-time registry check and
-returns `registrable`, pricing tier, and (when present) annual pricing. Without
-Cloudflare credentials the scan still runs, but `available` reflects RDAP/WHOIS
-only and may include reserved/premium domains.
+With `sld` 2–3 chars (mixed), that is ~47.9k SLDs × 12 TLDs ≈ **575k domains**.
 
-### Enabling Cloudflare confirmation
+## Sharding & resumable scans
 
-1. Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with Registrar permissions and note your account ID.
-2. Set them locally (`CLOUDFLARE_ACCOUNT_ID=...`, `CLOUDFLARE_API_TOKEN=...`) or as GitHub repo secrets of the same names.
+A full scan is large and Cloudflare is rate-limited, so the scanner works in
+**shards** — one shard per `(TLD, SLD-length)` pair.
 
-The `domain-check` endpoint is a read-only availability check (it does not
-register anything) and batches up to 20 domains per request.
+- Progress is tracked in `data/scan-progress.json`. Each completed shard is
+  recorded, so re-running continues where the last run left off.
+- Results accumulate into `public/results/domains.json` and are de-duplicated.
+- Set `scanner.shardsPerRun` to a small number to scan a few shards per run
+  (e.g. one CI run per day) until the cycle completes; `0` scans everything in
+  one pass.
+- Changing the scan config (SLD range, mode, TLD length) starts a fresh cycle.
 
-## TLD Policy
+## Cloudflare credentials
 
-`data/tld-policy.json` defines the **`supported`** allowlist — the TLDs
-Cloudflare supports for *programmatic* registration. Only these are scanned,
-because only these can be authoritatively confirmed as registerable via the
-domain-check API. TLDs outside the allowlist (e.g. most ccTLDs) are excluded
-from scanning entirely; register them via the Cloudflare dashboard if needed.
-
-Single-character SLDs are skipped by default (`sld.minLength: 2`) because registries almost always reserve them.
-
-## TLD Cache
-
-`data/tld-cache.json` stores which TLDs lack RDAP/WHOIS support, avoiding thousands of futile lookups each scan. The cache is updated:
-
-- Automatically every month via GitHub Actions (`update-tld-cache.yml`)
-- Manually with `npm run update-tld-cache`
+Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens)
+with Registrar permissions and note your account ID. Provide them as
+`CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` environment variables (locally)
+or GitHub repo secrets (CI). The `domain-check` endpoint is read-only and does
+not register anything.
 
 ## Project Structure
 
 ```
 domain-radar/
-├── config.yaml              # Scanner configuration
+├── config.yaml                  # Scanner configuration
 ├── data/
-│   ├── tld-cache.json       # TLD support cache
-│   └── tld-policy.json      # TLD registration policy (restricted/premium)
+│   ├── tld-policy.json          # Cloudflare-supported TLD allowlist
+│   └── scan-progress.json       # Shard progress (created on first run)
 ├── public/
-│   ├── index.html           # Result viewer UI
-│   └── results/             # Scan result JSON files
+│   ├── index.html               # Result viewer (TLD + SLD-length filters)
+│   └── results/
+│       ├── domains.json         # Accumulated available domains
+│       └── manifest.json        # Latest snapshot metadata
 ├── src/
-│   ├── cli/                 # CLI entry points
-│   └── lib/                 # Core library modules
-├── test/                    # Test files
+│   ├── cli/                     # CLI entry points
+│   └── lib/                     # Core modules (generator, scanner)
 └── .github/workflows/
-    ├── daily-check.yml      # Daily scan
-    └── update-tld-cache.yml # Monthly cache refresh
+    └── daily-check.yml          # Daily scan
 ```
 
 ## License
