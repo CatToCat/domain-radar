@@ -1,6 +1,26 @@
 {
   "files": [
     {
+      "filename": "2026-06-26_070512.json",
+      "date": "2026-06-26",
+      "config": {
+        "sldLength": 2,
+        "sldMinLength": 2,
+        "sldMode": "mixed",
+        "tldCount": 40
+      },
+      "summary": {
+        "total": 51840,
+        "dnsExists": 18989,
+        "available": 2652,
+        "premium": 2599,
+        "reserved": 0,
+        "registered": 21420,
+        "unsupported": 0,
+        "error": 25169
+      }
+    },
+    {
       "filename": "2026-06-25_193255.json",
       "date": "2026-06-25",
       "config": {
