@@ -1,114 +1,122 @@
 # Domain Radar
 
-Find **registerable, cheap short domains** under the 3-character TLDs Cloudflare
-Registrar supports for programmatic registration, then confirm real-time
-availability and pricing via Cloudflare. Only available domains are kept, and
-they are presented in a minimal static dashboard.
+find registerable cheap short domains on cloudflare.
 
-## How it works
+## workflow
 
-1. **Enumerate** short SLDs (digits + letters, configurable length) under the
-   eligible TLDs.
-2. **DNS pre-filter** — domains that resolve are already registered and skipped
-   cheaply, before spending any Cloudflare API quota.
-3. **Cloudflare domain-check** — an authoritative, real-time registry check on
-   the remaining candidates. Only domains confirmed `registrable` at the
-   `standard` tier are kept (premium / reserved / taken are dropped).
-4. **Output** — each kept domain is stored as `{ domain, price, currency }` in
-   `public/results/domains.json`, viewable in `public/index.html`.
+```
+┌─────────────────────────────────────────────────────────┐
+│  daily 02:00 UTC (github action)                        │
+│                                                         │
+│  1. generate all sld + tld combinations                 │
+│     (config: sld 1-2 chars, tld ≤2 chars)              │
+│                                                         │
+│  2. dns pre-filter                                      │
+│     domains that resolve → registered, skip             │
+│                                                         │
+│  3. cloudflare domain-check api                         │
+│     confirm availability + pricing                      │
+│                                                         │
+│  4. save results                                        │
+│     data/results/YYYY-MM-DD.json  (full log)           │
+│     public/data.json              (available only)      │
+│                                                         │
+│  5. commit & push to repo                               │
+└─────────────────────────────────────────────────────────┘
 
-## Quick Start
-
-```bash
-npm install
-# Cloudflare credentials are required:
-$env:CLOUDFLARE_ACCOUNT_ID="..."   # PowerShell
-$env:CLOUDFLARE_API_TOKEN="..."
-npm run estimate-scan-time   # preview scope & rough time
-npm run scan-availability    # run the scan
+┌─────────────────────────────────────────────────────────┐
+│  daily 07:00 UTC (github action)                        │
+│                                                         │
+│  if available domains > 0:                              │
+│    create github issue (assigned to repo owner)         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Scripts
+## project structure
 
-| Command | Description |
-|---------|-------------|
-| `npm run generate-domain-list` | Preview the scan scope (TLDs, SLD counts, totals) |
-| `npm run estimate-scan-time` | Rough time estimate for a full scan |
-| `npm run scan-availability` | DNS pre-filter + Cloudflare confirmation |
-| `npm run run-all` | Alias for the scan |
+```
+domain-radar/
+├── config.yaml                 # scan configuration
+├── data/
+│   ├── cloudflare-tlds.json    # full cloudflare supported tld list
+│   └── results/                # daily scan logs (all domains + status)
+│       └── 2026-07-04.json
+├── public/
+│   ├── index.html              # web ui
+│   ├── data.json               # available domains for web display
+│   └── favicon.svg
+├── src/
+│   ├── cli/
+│   │   ├── scan-availability.js    # main scanner
+│   │   ├── estimate-scan-time.js   # time estimation
+│   │   ├── generate-domain-list.js # preview scan scope
+│   │   ├── update-tld-list.js      # refresh tld list from cloudflare
+│   │   ├── notify-short-domains.js # create github issue
+│   │   └── run-all.js
+│   └── lib/
+│       ├── availability-scanner.js   # dns + cloudflare api logic
+│       ├── domain-list-generator.js  # sld/tld combination generator
+│       └── short-domain-notifier.js  # issue creation logic
+├── .github/workflows/
+│   ├── daily-check.yml         # daily scan (02:00 utc)
+│   └── notify-short-domains.yml # notify (07:00 utc)
+└── vercel.json                 # web deployment config
+```
 
-## Configuration
+## local setup
 
-Edit `config.yaml`:
+```bash
+# install
+npm install
+
+# preview scan scope
+npm run generate-domain-list
+
+# estimate scan time
+npm run estimate-scan-time
+
+# run scan (requires cloudflare credentials)
+CLOUDFLARE_ACCOUNT_ID=xxx CLOUDFLARE_API_TOKEN=xxx npm run scan-availability
+
+# update tld list (manual, when needed)
+npm run update-tld-list
+
+# start web ui locally
+python3 -m http.server 3000 --directory public
+# open http://localhost:3000
+```
+
+## configuration
+
+`config.yaml`:
 
 ```yaml
 sld:
-  minLength: 2    # skip 1-char SLDs (registry-reserved)
-  maxLength: 3    # enumerate up to this many characters
-  mode: mixed     # digits | alpha | mixed (mixed = a-z 0-9)
+  maxLength: 2    # generate sld from 1 to N chars
+  mode: mixed     # digits | alpha | mixed
 
 tld:
-  length: 3       # only TLDs with exactly this many characters
+  maxLength: 2    # include tlds with ≤N chars from cloudflare list
 
 scanner:
   dnsConcurrency: 50
   cloudflareConcurrency: 3
-  cloudflareBatchSize: 20    # CF max is 20 per request
-  cloudflareDelay: 200       # ms between batches
-  shardsPerRun: 0            # max shards per run (0 = all). See Sharding.
+  cloudflareBatchSize: 20
+  cloudflareDelay: 200
+  shardsPerRun: 0           # 0 = all shards in one pass
 ```
 
-## Eligible TLDs
+current scan scope: 12 tlds (ai, ca, cc, co, fm, io, me, mx, nz, tv, uk, us) × 1332 slds = ~16k domains, ~1.5 min.
 
-`data/tld-policy.json` lists the TLDs Cloudflare supports for programmatic
-registration. The scanner keeps only those whose length equals `tld.length`.
-With the default `tld.length: 3`, the eligible TLDs are:
+## github secrets
 
-`com, org, net, app, dev, xyz, pro, fyi, run, day, ing, icu` (12 TLDs)
+add to repo settings → secrets → actions:
 
-With `sld` 2–3 chars (mixed), that is ~47.9k SLDs × 12 TLDs ≈ **575k domains**.
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
 
-## Sharding & resumable scans
+create token at https://dash.cloudflare.com/profile/api-tokens with registrar read permission.
 
-A full scan is large and Cloudflare is rate-limited, so the scanner works in
-**shards** — one shard per `(TLD, SLD-length)` pair.
-
-- Progress is tracked in `data/scan-progress.json`. Each completed shard is
-  recorded, so re-running continues where the last run left off.
-- Results accumulate into `public/results/domains.json` and are de-duplicated.
-- Set `scanner.shardsPerRun` to a small number to scan a few shards per run
-  (e.g. one CI run per day) until the cycle completes; `0` scans everything in
-  one pass.
-- Changing the scan config (SLD range, mode, TLD length) starts a fresh cycle.
-
-## Cloudflare credentials
-
-Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens)
-with Registrar permissions and note your account ID. Provide them as
-`CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` environment variables (locally)
-or GitHub repo secrets (CI). The `domain-check` endpoint is read-only and does
-not register anything.
-
-## Project Structure
-
-```
-domain-radar/
-├── config.yaml                  # Scanner configuration
-├── data/
-│   ├── tld-policy.json          # Cloudflare-supported TLD allowlist
-│   └── scan-progress.json       # Shard progress (created on first run)
-├── public/
-│   ├── index.html               # Result viewer (TLD + SLD-length filters)
-│   └── results/
-│       ├── domains.json         # Accumulated available domains
-│       └── manifest.json        # Latest snapshot metadata
-├── src/
-│   ├── cli/                     # CLI entry points
-│   └── lib/                     # Core modules (generator, scanner)
-└── .github/workflows/
-    └── daily-check.yml          # Daily scan
-```
-
-## License
+## license
 
 [MIT](LICENSE)
