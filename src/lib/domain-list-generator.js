@@ -40,17 +40,13 @@ function generateDomains(slds, tlds) {
     return domains;
 }
 
-// Keep only TLDs that (a) Cloudflare supports for programmatic registration
-// (the 'supported' allowlist in tld-policy.json) and (b) have exactly the
-// configured character length. Only these can be authoritatively confirmed and
-// registered via the Cloudflare domain-check / registrations API.
-function filterTlds(tlds, policy = {}, tldLength = null) {
+function filterTlds(tlds, policy = {}, tldMaxLength = null) {
     const supported = Array.isArray(policy.supported) ? new Set(policy.supported) : null;
     const kept = [];
     const removed = [];
     for (const t of tlds) {
         const okPolicy = supported ? supported.has(t) : true;
-        const okLength = tldLength == null ? true : t.length === tldLength;
+        const okLength = tldMaxLength == null ? true : t.length <= tldMaxLength;
         if (okPolicy && okLength) kept.push(t);
         else removed.push(t);
     }

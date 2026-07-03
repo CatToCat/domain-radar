@@ -1,12 +1,13 @@
 {
   "name": "domain-radar",
   "version": "3.0.0",
-  "description": "Find registerable cheap short domains under Cloudflare-supported 3-char TLDs, with a static result viewer",
+  "description": "Find registerable cheap short domains under Cloudflare-supported TLDs, with a static result viewer",
   "main": "src/cli/run-all.js",
   "type": "commonjs",
   "scripts": {
     "generate-domain-list": "node src/cli/generate-domain-list.js",
     "scan-availability": "node src/cli/scan-availability.js",
+    "update-tld-list": "node src/cli/update-tld-list.js",
     "notify-short-domains": "node src/cli/notify-short-domains.js",
     "run-all": "node src/cli/run-all.js",
     "estimate-scan-time": "node src/cli/estimate-scan-time.js"

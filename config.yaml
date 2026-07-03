@@ -1,26 +1,19 @@
-# Domain Radar v3 configuration.
+# Domain Radar v4 configuration.
 #
-# Strategy: enumerate short SLDs (digits + letters) under the 3-character TLDs
-# that Cloudflare Registrar supports for PROGRAMMATIC registration, then confirm
-# real availability + price via Cloudflare's domain-check API. Only registerable
-# ("available") domains are kept.
+# Strategy: enumerate short SLDs under short TLDs that Cloudflare Registrar
+# supports, then confirm availability via Cloudflare's domain-check API.
+# Goal: find cheap, registerable short domains.
 
 sld:
-  minLength: 2    # skip 1-char SLDs (registries almost always reserve them)
-  maxLength: 3    # enumerate SLDs up to this many characters
+  maxLength: 2    # enumerate SLDs from 1 to this many characters
   mode: mixed     # digits | alpha | mixed (mixed = a-z 0-9, 36 chars)
 
 tld:
-  length: 3       # only include TLDs with exactly this many characters
+  maxLength: 2    # include TLDs with 1 to this many characters from the supported list
 
 scanner:
   dnsConcurrency: 50          # parallel DNS pre-filter lookups
   cloudflareConcurrency: 3    # parallel Cloudflare domain-check batches
   cloudflareBatchSize: 20     # domains per domain-check request (CF max is 20)
   cloudflareDelay: 200        # delay between Cloudflare batches (ms)
-
-  # Sharding: a scan run processes at most this many shards, where each shard is
-  # one (TLD, SLD-length) pair. Progress is tracked in data/scan-progress.json so
-  # successive runs continue where the last left off. Set to 0 to run all shards
-  # in a single pass.
-  shardsPerRun: 0
+  shardsPerRun: 0             # 0 = run all shards in a single pass

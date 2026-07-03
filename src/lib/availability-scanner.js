@@ -12,7 +12,7 @@ const CF_API_BASE = 'https://api.cloudflare.com/client/v4';
 //   Stage 2 (Cloudflare domain-check): an authoritative, real-time registry
 //     check. Only this can distinguish freely-registerable from
 //     reserved/premium/taken. Restricted to TLDs Cloudflare supports for
-//     programmatic registration (see data/tld-policy.json).
+//     programmatic registration (see data/cloudflare-tlds.json).
 //
 // Only domains Cloudflare confirms as registrable at standard tier are kept.
 // ---------------------------------------------------------------------------
@@ -69,24 +69,24 @@ async function checkDNS(domain) {
     }
 }
 
-// Run DNS pre-filter over `domains`, returning those that did NOT resolve
-// (candidates that may be available). Runs with bounded concurrency.
+// Run DNS pre-filter over `domains`. Returns candidates (unresolved) and
+// registered (resolved) lists. Runs with bounded concurrency.
 async function dnsPrefilter(domains, { dnsConcurrency = 50, onProgress } = {}) {
     const candidates = [];
+    const registered = [];
     const executing = new Set();
     let checked = 0;
-    let resolved = 0;
 
     for (const item of domains) {
         const p = (async () => {
             const exists = await checkDNS(item.domain);
             checked++;
             if (exists) {
-                resolved++;
+                registered.push(item);
             } else {
                 candidates.push(item);
             }
-            if (onProgress) onProgress({ checked, total: domains.length, resolved });
+            if (onProgress) onProgress({ checked, total: domains.length, resolved: registered.length });
         })();
         executing.add(p);
         p.finally(() => executing.delete(p));
@@ -95,11 +95,11 @@ async function dnsPrefilter(domains, { dnsConcurrency = 50, onProgress } = {}) {
         }
     }
     await Promise.all(executing);
-    return { candidates, resolved };
+    return { candidates, registered, resolved: registered.length };
 }
 
-// Confirm candidate domains via Cloudflare domain-check. Returns an array of
-// AVAILABLE records only: { domain, sld, tld, sldLength, tldLength, price, currency }.
+// Confirm candidate domains via Cloudflare domain-check. Returns available and
+// unavailable arrays, plus error/abort info.
 async function cloudflareConfirm(candidates, options = {}) {
     const {
         accountId,
@@ -112,6 +112,8 @@ async function cloudflareConfirm(candidates, options = {}) {
 
     const byDomain = new Map(candidates.map(c => [c.domain, c]));
     const available = [];
+    const unavailable = [];
+    const errored = [];
 
     const batches = [];
     for (let i = 0; i < candidates.length; i += cloudflareBatchSize) {
@@ -141,7 +143,14 @@ async function cloudflareConfirm(candidates, options = {}) {
                         await new Promise(r => setTimeout(r, attempt * 2000));
                         continue;
                     }
-                    if (attempt >= 3) { errors += batch.length; return; }
+                    if (attempt >= 3) {
+                        errors += batch.length;
+                        for (const d of batch) {
+                            const item = byDomain.get(d);
+                            if (item) errored.push({ domain: item.domain, sld: item.sld, tld: item.tld, status: 'error' });
+                        }
+                        return;
+                    }
                     await new Promise(r => setTimeout(r, attempt * 1000));
                 }
             }
@@ -152,16 +161,23 @@ async function cloudflareConfirm(candidates, options = {}) {
                 const cf = resultMap.get(domain);
                 const item = byDomain.get(domain);
                 if (!cf || !item) continue;
-                // Keep only standard-tier registerable domains.
-                if (cf.registrable && cf.tier !== 'premium') {
+                if (cf.registrable) {
                     available.push({
                         domain: item.domain,
                         sld: item.sld,
                         tld: item.tld,
-                        sldLength: item.sld.length,
-                        tldLength: item.tld.length,
                         price: cf.pricing ? cf.pricing.registration_cost : null,
-                        currency: cf.pricing ? cf.pricing.currency : null
+                        currency: cf.pricing ? cf.pricing.currency : null,
+                        status: 'available',
+                        tier: cf.tier === 'premium' ? 'premium' : 'standard'
+                    });
+                } else {
+                    unavailable.push({
+                        domain: item.domain,
+                        sld: item.sld,
+                        tld: item.tld,
+                        status: 'unavailable',
+                        reason: cf.reason || 'unknown'
                     });
                 }
             }
@@ -179,11 +195,11 @@ async function cloudflareConfirm(candidates, options = {}) {
     }
     await Promise.all(executing);
 
-    return { available, errors, aborted };
+    return { available, unavailable, errored, errors, aborted };
 }
 
 // Full scan over a domain list: DNS pre-filter then Cloudflare confirmation.
-// Returns { available, stats }. Requires Cloudflare credentials.
+// Returns { available, allResults, stats }. Requires Cloudflare credentials.
 async function runChecks(domains, options = {}) {
     const accountId = options.cloudflareAccountId || process.env.CLOUDFLARE_ACCOUNT_ID || null;
     const apiToken = options.cloudflareApiToken || process.env.CLOUDFLARE_API_TOKEN || null;
@@ -193,7 +209,7 @@ async function runChecks(domains, options = {}) {
     }
 
     console.log(`[DNS] Pre-filtering ${domains.length} domains (concurrency ${options.dnsConcurrency || 50})`);
-    const { candidates, resolved } = await dnsPrefilter(domains, {
+    const { candidates, registered, resolved } = await dnsPrefilter(domains, {
         dnsConcurrency: options.dnsConcurrency || 50,
         onProgress: ({ checked, total, resolved }) => {
             if (checked % 500 === 0 || checked === total) {
@@ -204,7 +220,7 @@ async function runChecks(domains, options = {}) {
     console.log(`[DNS] Done. Registered (resolved): ${resolved}, Candidates (unresolved): ${candidates.length}`);
 
     console.log(`[Cloudflare] Confirming ${candidates.length} candidates (batch ${options.cloudflareBatchSize || 20}, concurrency ${options.cloudflareConcurrency || 3})`);
-    const { available, errors, aborted } = await cloudflareConfirm(candidates, {
+    const { available, unavailable, errored, errors, aborted } = await cloudflareConfirm(candidates, {
         accountId,
         apiToken,
         cloudflareBatchSize: options.cloudflareBatchSize || 20,
@@ -218,13 +234,22 @@ async function runChecks(domains, options = {}) {
     });
     console.log(`[Cloudflare] Done. Available: ${available.length}, Errors: ${errors}${aborted ? ' (aborted on auth error)' : ''}`);
 
+    const allResults = [
+        ...registered.map(r => ({ domain: r.domain, sld: r.sld, tld: r.tld, status: 'unavailable', reason: 'registered' })),
+        ...available,
+        ...unavailable,
+        ...errored.map(r => ({ ...r, status: 'unavailable', reason: 'error' }))
+    ];
+
     return {
         available,
+        allResults,
         stats: {
             total: domains.length,
             registered: resolved,
             candidates: candidates.length,
             available: available.length,
+            unavailable: unavailable.length,
             errors,
             aborted
         }

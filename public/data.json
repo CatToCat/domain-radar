@@ -1,0 +1,10 @@
+{
+  "generatedAt": null,
+  "config": {},
+  "summary": {
+    "total": 0,
+    "available": { "total": 0, "standard": 0, "premium": 0 },
+    "unavailable": { "total": 0, "registered": 0, "other": 0, "error": 0 }
+  },
+  "results": []
+}

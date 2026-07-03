@@ -6,11 +6,10 @@ const { runChecks } = require('../lib/availability-scanner');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, 'config.yaml');
-const TLD_POLICY_PATH = path.join(ROOT, 'data', 'tld-policy.json');
+const TLD_POLICY_PATH = path.join(ROOT, 'data', 'cloudflare-tlds.json');
 const PROGRESS_PATH = path.join(ROOT, 'data', 'scan-progress.json');
-const RESULTS_DIR = path.join(ROOT, 'public', 'results');
-const DOMAINS_FILE = path.join(RESULTS_DIR, 'domains.json'); // current accumulating result
-const MANIFEST_PATH = path.join(RESULTS_DIR, 'manifest.json');
+const DATA_RESULTS_DIR = path.join(ROOT, 'data', 'results');
+const WEB_DATA_FILE = path.join(ROOT, 'public', 'data.json');
 
 function loadJson(p, fallback) {
     if (!fs.existsSync(p)) return fallback;
@@ -20,10 +19,9 @@ function loadJson(p, fallback) {
 function saveJson(p, data) {
     const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(p, JSON.stringify(data), 'utf8');
+    fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// A shard is one (tld, sldLength) pair. Build the full ordered list of shards.
 function buildShards(tlds, minLen, maxLen) {
     const shards = [];
     for (let len = minLen; len <= maxLen; len++) {
@@ -34,14 +32,20 @@ function buildShards(tlds, minLen, maxLen) {
     return shards;
 }
 
+function getDateStr() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 async function main() {
     const config = yaml.load(fs.readFileSync(CONFIG_PATH, 'utf8'));
     const policy = loadJson(TLD_POLICY_PATH, { supported: [] });
 
-    const minLen = config.sld?.minLength ?? 2;
-    const maxLen = config.sld?.maxLength ?? 3;
+    const maxLen = config.sld?.maxLength ?? 2;
+    const minLen = 1;
     const mode = config.sld?.mode || 'mixed';
-    const tldLength = config.tld?.length ?? 3;
+    const tldMaxLength = config.tld?.maxLength ?? 2;
     const shardsPerRun = config.scanner?.shardsPerRun ?? 0;
 
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || null;
@@ -51,24 +55,16 @@ async function main() {
         process.exit(1);
     }
 
-    const { kept: tlds, removed } = filterTlds(policy.supported || [], policy, tldLength);
-    console.log(`Config: SLD ${minLen}-${maxLen} chars, mode=${mode}, TLD length=${tldLength}`);
+    const { kept: tlds } = filterTlds(policy.supported || [], policy, tldMaxLength);
+    console.log(`Config: SLD 1-${maxLen} chars, mode=${mode}, TLD maxLength=${tldMaxLength}`);
     console.log(`TLDs (${tlds.length}): ${tlds.join(', ')}`);
-    if (removed.length) console.log(`Excluded ${removed.length} TLDs (wrong length or unsupported)`);
 
     const allShards = buildShards(tlds, minLen, maxLen);
 
-    // Load progress. Reset if the config signature changed (different shard set).
-    const signature = `${mode}|${minLen}-${maxLen}|${tldLength}|${tlds.join(',')}`;
+    const signature = `${mode}|${minLen}-${maxLen}|tldMax${tldMaxLength}|${tlds.join(',')}`;
     let progress = loadJson(PROGRESS_PATH, null);
     if (!progress || progress.signature !== signature) {
         progress = { signature, startedAt: new Date().toISOString(), done: [] };
-        // Fresh run cycle: start a new accumulating result file.
-        saveJson(DOMAINS_FILE, {
-            generatedAt: new Date().toISOString(),
-            config: { sldMinLength: minLen, sldMaxLength: maxLen, mode, tlds },
-            results: []
-        });
         console.log('Started a new scan cycle (config changed or no progress found).');
     }
 
@@ -82,13 +78,18 @@ async function main() {
     const toRun = shardsPerRun > 0 ? pending.slice(0, shardsPerRun) : pending;
     console.log(`Shards: ${allShards.length} total, ${doneSet.size} done, running ${toRun.length} this pass.`);
 
-    // Load the current accumulating result file.
-    const resultFile = loadJson(DOMAINS_FILE, {
-        generatedAt: new Date().toISOString(),
-        config: { sldMinLength: minLen, sldMaxLength: maxLen, mode, tlds },
-        results: []
+    // Full scan results for today (all domains with status)
+    const dateStr = getDateStr();
+    const dailyResultPath = path.join(DATA_RESULTS_DIR, `${dateStr}.json`);
+    const dailyResult = loadJson(dailyResultPath, {
+        date: dateStr,
+        config: { sldMaxLength: maxLen, mode, tldMaxLength, tlds },
+        domains: []
     });
-    const seen = new Set(resultFile.results.map(r => r.domain));
+    const seenDaily = new Set(dailyResult.domains.map(r => r.domain));
+
+    // Available domains for web display
+    const availableAll = [];
 
     for (let i = 0; i < toRun.length; i++) {
         const shard = toRun[i];
@@ -96,7 +97,7 @@ async function main() {
         const domains = generateDomains(slds, [shard.tld]);
         console.log(`\n=== Shard ${i + 1}/${toRun.length}: .${shard.tld} / ${shard.sldLength}-char (${domains.length} domains) ===`);
 
-        const { available } = await runChecks(domains, {
+        const { available, allResults } = await runChecks(domains, {
             dnsConcurrency: config.scanner.dnsConcurrency,
             cloudflareAccountId: accountId,
             cloudflareApiToken: apiToken,
@@ -105,39 +106,58 @@ async function main() {
             cloudflareDelay: config.scanner.cloudflareDelay
         });
 
-        for (const a of available) {
-            if (seen.has(a.domain)) continue;
-            seen.add(a.domain);
-            resultFile.results.push({ domain: a.domain, price: a.price, currency: a.currency });
+        for (const r of allResults) {
+            if (!seenDaily.has(r.domain)) {
+                seenDaily.add(r.domain);
+                dailyResult.domains.push(r);
+            }
         }
 
-        // Persist after each shard so progress survives interruption.
-        resultFile.generatedAt = new Date().toISOString();
-        resultFile.results.sort((x, y) => x.domain.localeCompare(y.domain));
-        saveJson(DOMAINS_FILE, resultFile);
+        for (const a of available) {
+            availableAll.push({ domain: a.domain, price: a.price, currency: a.currency, tier: a.tier });
+        }
+
+        // Persist after each shard
+        dailyResult.updatedAt = new Date().toISOString();
+        saveJson(dailyResultPath, dailyResult);
 
         progress.done.push(shard.id);
         progress.updatedAt = new Date().toISOString();
         saveJson(PROGRESS_PATH, progress);
     }
 
-    // Update manifest (single latest snapshot).
-    const manifest = {
-        latest: 'domains.json',
-        generatedAt: resultFile.generatedAt,
-        config: resultFile.config,
-        summary: { available: resultFile.results.length },
-        progress: {
-            shardsDone: progress.done.length,
-            shardsTotal: allShards.length,
-            complete: progress.done.length >= allShards.length
+    // Write web data file (single file: summary + results)
+    const availableDomains = dailyResult.domains.filter(d => d.status === 'available');
+    const unavailableDomains = dailyResult.domains.filter(d => d.status === 'unavailable');
+    const stats = {
+        total: dailyResult.domains.length,
+        available: {
+            total: availableDomains.length,
+            standard: availableDomains.filter(d => d.tier === 'standard').length,
+            premium: availableDomains.filter(d => d.tier === 'premium').length
+        },
+        unavailable: {
+            total: unavailableDomains.length,
+            registered: unavailableDomains.filter(d => d.reason === 'registered').length,
+            other: unavailableDomains.filter(d => d.reason !== 'registered' && d.reason !== 'error').length,
+            error: unavailableDomains.filter(d => d.reason === 'error').length
         }
     };
-    saveJson(MANIFEST_PATH, manifest);
+    const webData = {
+        generatedAt: new Date().toISOString(),
+        config: { sldMaxLength: maxLen, mode, tldMaxLength, tlds },
+        summary: stats,
+        results: availableAll.sort((a, b) => a.domain.localeCompare(b.domain))
+    };
+    saveJson(WEB_DATA_FILE, webData);
 
-    console.log(`\nDone this pass. Total available accumulated: ${resultFile.results.length}`);
+    console.log(`\nDone this pass.`);
+    console.log(`  Total checked: ${stats.total}`);
+    console.log(`  Available: ${stats.available.total} (standard: ${stats.available.standard}, premium: ${stats.available.premium})`);
+    console.log(`  Unavailable: ${stats.unavailable.total} (registered: ${stats.unavailable.registered}, other: ${stats.unavailable.other}, error: ${stats.unavailable.error})`);
     console.log(`Progress: ${progress.done.length}/${allShards.length} shards${progress.done.length >= allShards.length ? ' (cycle COMPLETE)' : ''}`);
-    console.log(`Results: public/results/domains.json`);
+    console.log(`Full log: ${dailyResultPath}`);
+    console.log(`Web data: ${WEB_DATA_FILE}`);
 }
 
 main().catch(err => {

@@ -5,7 +5,7 @@ const { generateSLDs, filterTlds } = require('../lib/domain-list-generator');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, 'config.yaml');
-const TLD_POLICY_PATH = path.join(ROOT, 'data', 'tld-policy.json');
+const TLD_POLICY_PATH = path.join(ROOT, 'data', 'cloudflare-tlds.json');
 
 function formatDuration(sec) {
     sec = Math.ceil(sec);
@@ -21,12 +21,12 @@ function main() {
         try { policy = JSON.parse(fs.readFileSync(TLD_POLICY_PATH, 'utf8')); } catch {}
     }
 
-    const minLen = config.sld?.minLength ?? 2;
-    const maxLen = config.sld?.maxLength ?? 3;
+    const maxLen = config.sld?.maxLength ?? 2;
+    const minLen = 1;
     const mode = config.sld?.mode || 'mixed';
-    const tldLength = config.tld?.length ?? 3;
+    const tldMaxLength = config.tld?.maxLength ?? 2;
 
-    const { kept: tlds } = filterTlds(policy.supported || [], policy, tldLength);
+    const { kept: tlds } = filterTlds(policy.supported || [], policy, tldMaxLength);
     const sldCount = generateSLDs(minLen, maxLen, mode).length;
     const total = sldCount * tlds.length;
 
@@ -48,7 +48,7 @@ function main() {
     const totalEstSec = dnsEstSec + cfEstSec;
 
     console.log('');
-    console.log(`SLD ${minLen}-${maxLen} chars (${mode}), TLD length ${tldLength}`);
+    console.log(`SLD 1-${maxLen} chars (${mode}), TLD maxLength=${tldMaxLength}`);
     console.log(`TLDs (${tlds.length}): ${tlds.join(', ')}`);
     console.log('');
     console.log('\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510');

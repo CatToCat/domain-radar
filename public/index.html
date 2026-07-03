@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-    <title>Domain Radar - Available Short Domains</title>
+    <title>Domain Radar</title>
     <style>
         :root {
             --bg: #f5f5f7;
@@ -14,9 +14,10 @@
             --border: rgba(0, 0, 0, 0.06);
             --accent: #0071e3;
             --green: #34c759;
-            --radius: 16px;
-            --radius-sm: 10px;
-            --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            --orange: #ff9500;
+            --radius: 20px;
+            --radius-sm: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
             --blur: blur(20px) saturate(180%);
         }
         @media (prefers-color-scheme: dark) {
@@ -26,7 +27,7 @@
                 --text: #f5f5f7;
                 --text-secondary: #98989d;
                 --border: rgba(255, 255, 255, 0.08);
-                --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+                --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
             }
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -37,157 +38,119 @@
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
-        .container { max-width: 1024px; margin: 0 auto; padding: 48px 24px; }
-        header { text-align: center; margin-bottom: 32px; }
-        header h1 {
-            font-size: 44px; font-weight: 700; letter-spacing: -0.02em;
+        .container { max-width: 800px; margin: 0 auto; padding: 60px 24px; }
+
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .top-bar h1 {
+            font-size: 32px; font-weight: 700; letter-spacing: -0.03em;
             background: linear-gradient(135deg, #0071e3, #34c759);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
-        header h1 img { height: 1em; vertical-align: -0.1em; margin-right: 8px; }
-
-        .stat-card {
-            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 24px; text-align: center; box-shadow: var(--shadow);
-            max-width: 280px; margin: 0 auto 16px;
+        .top-bar h1 img { height: 1.1em; vertical-align: -0.15em; margin-right: 8px; }
+        .top-bar .stats {
+            display: flex; align-items: center; gap: 16px; font-size: 13px; font-weight: 500;
         }
-        .stat-card .value { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; color: var(--green); }
-        .stat-card .label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
+        .top-bar .stat { display: flex; align-items: center; gap: 4px; }
+        .top-bar .stat .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .top-bar .stat .dot.green { background: var(--green); }
+        .top-bar .stat .dot.orange { background: var(--orange); }
+        .top-bar .meta { font-size: 11px; color: var(--text-secondary); }
 
-        .meta { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 28px; }
-
-        .toolbar {
-            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow);
-            display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: center;
+        .domain-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;
         }
-        .filter-group { display: flex; flex-direction: column; gap: 6px; }
-        .toolbar label { font-size: 12px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
-        .toolbar select {
+        .domain-card {
+            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            padding: 20px; box-shadow: var(--shadow);
+            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .domain-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+        .domain-card .domain-name {
+            font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+        }
+        .domain-card .tld { color: var(--text-secondary); }
+        .domain-card .price-tag {
+            font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+        }
+        .tier-badge {
+            display: inline-block; padding: 3px 8px; border-radius: 5px;
+            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .tier-badge.standard { background: rgba(52, 199, 89, 0.1); color: var(--green); }
+        .tier-badge.premium { background: rgba(255, 149, 0, 0.1); color: var(--orange); }
+
+        .filters {
+            display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .filters select {
             appearance: none; -webkit-appearance: none;
-            background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
-            padding: 10px 32px 10px 14px; font-size: 14px; color: var(--text); font-family: inherit; min-width: 150px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2386868b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center;
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 7px 28px 7px 11px; font-size: 12px; color: var(--text); font-family: inherit;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2386868b' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 9px center;
         }
-        .toolbar select:focus { outline: none; border-color: var(--accent); }
-        .btn-query {
-            background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm);
-            padding: 11px 28px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
-            transition: opacity 0.2s;
-        }
-        .btn-query:hover { opacity: 0.9; }
+        .filters select:focus { outline: none; border-color: var(--accent); }
 
-        .table-container {
-            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+        .domain-list.empty {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 300px; text-align: center;
         }
-        .table-scroll { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 15px; }
-        th {
-            padding: 14px 20px; text-align: left; font-size: 12px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);
-            border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
-            position: sticky; top: 0; background: var(--card-bg);
-        }
-        th:hover { color: var(--accent); }
-        th .sort-icon { margin-left: 4px; opacity: 0.5; }
-        td { padding: 13px 20px; border-bottom: 1px solid var(--border); }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(52, 199, 89, 0.05); }
-        .price { font-variant-numeric: tabular-nums; }
-
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; }
-        .pagination button {
-            background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
-            padding: 8px 16px; font-size: 14px; color: var(--text); cursor: pointer; font-family: inherit; transition: all 0.2s;
-        }
-        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-        .pagination button:disabled { opacity: 0.3; cursor: default; }
-        .pagination .page-info { font-size: 13px; color: var(--text-secondary); }
-
-        .empty-state { text-align: center; padding: 60px 24px; color: var(--text-secondary); }
-        .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+        .empty-state h3 { font-size: 18px; font-weight: 700; color: var(--text); }
+        .empty-state p { font-size: 14px; margin-top: 6px; color: var(--text-secondary); }
 
         @media (max-width: 640px) {
             .container { padding: 24px 16px; }
-            header h1 { font-size: 30px; }
-            .toolbar { padding: 16px; }
-            .filter-group, .toolbar select, .btn-query { width: 100%; }
+            .top-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .domain-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .domain-card { padding: 16px; }
+            .domain-card .domain-name { font-size: 17px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
+        <div class="top-bar">
             <h1><img src="./favicon.svg" alt="">Domain Radar</h1>
-        </header>
-
-        <div class="stat-card">
-            <div class="value" id="stat-available">-</div>
-            <div class="label">Available Domains</div>
-        </div>
-        <div class="meta" id="meta"></div>
-
-        <div class="toolbar">
-            <div class="filter-group">
-                <label>TLD</label>
-                <select id="filter-tld"><option value="all">All TLDs</option></select>
-            </div>
-            <div class="filter-group">
-                <label>SLD Length</label>
-                <select id="filter-length"><option value="all">All Lengths</option></select>
-            </div>
-            <button class="btn-query" id="btn-query">Query</button>
-        </div>
-
-        <div class="table-container">
-            <div class="table-scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th data-sort="domain">Domain <span class="sort-icon"></span></th>
-                            <th data-sort="price">Pricing <span class="sort-icon"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body"></tbody>
-                </table>
-            </div>
-            <div class="pagination">
-                <button id="btn-prev" disabled>&larr; Previous</button>
-                <span class="page-info" id="page-info">-</span>
-                <button id="btn-next" disabled>Next &rarr;</button>
+            <div class="stats">
+                <span class="stat"><span class="dot green"></span> <span id="stat-standard">-</span> standard</span>
+                <span class="stat"><span class="dot orange"></span> <span id="stat-premium">-</span> premium</span>
+                <span class="meta" id="meta"></span>
             </div>
         </div>
+
+        <div class="filters">
+            <select id="filter-tld"><option value="all">All TLDs</option></select>
+            <select id="filter-tier"><option value="all">All Tiers</option><option value="standard">Standard</option><option value="premium">Premium</option></select>
+            <select id="filter-sort"><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="domain">Domain: A-Z</option></select>
+        </div>
+
+        <div class="domain-list" id="domain-list"></div>
     </div>
 
     <script>
-        const PAGE_SIZE = 100;
         let allData = [];
-        let filteredData = [];
-        let currentPage = 1;
-        let sortKey = 'domain';
-        let sortDir = 'asc';
 
-        async function loadManifest() {
+        async function loadData() {
             try {
-                const res = await fetch('./results/manifest.json');
-                if (!res.ok) throw new Error('no manifest');
+                const res = await fetch('./data.json');
+                if (!res.ok) throw new Error('no data');
                 return await res.json();
             } catch { return null; }
-        }
-
-        async function loadData(filename) {
-            const res = await fetch(`./results/${filename}`);
-            return await res.json();
         }
 
         function formatPrice(item) {
             if (item.price == null) return '-';
             const cur = item.currency || 'USD';
-            const sym = cur === 'USD' ? '$' : (cur === 'EUR' ? '\u20AC' : (cur === 'GBP' ? '\u00A3' : ''));
+            const sym = cur === 'USD' ? '$' : (cur === 'EUR' ? '€' : (cur === 'GBP' ? '£' : ''));
             return `${sym}${item.price}${sym ? '' : ' ' + cur}/yr`;
         }
 
@@ -196,97 +159,72 @@
             const tldSel = document.getElementById('filter-tld');
             tldSel.innerHTML = '<option value="all">All TLDs</option>' +
                 tlds.map(t => `<option value="${t}">.${t}</option>`).join('');
-
-            const lengths = [...new Set(data.map(d => d.domain.split('.')[0].length))].sort((a, b) => a - b);
-            const lenSel = document.getElementById('filter-length');
-            lenSel.innerHTML = '<option value="all">All Lengths</option>' +
-                lengths.map(l => `<option value="${l}">${l} chars</option>`).join('');
-        }
-
-        function applyFilters() {
-            const tld = document.getElementById('filter-tld').value;
-            const len = document.getElementById('filter-length').value;
-
-            filteredData = allData.filter(item => {
-                const itemTld = item.domain.split('.').pop();
-                const itemLen = item.domain.split('.')[0].length;
-                if (tld !== 'all' && itemTld !== tld) return false;
-                if (len !== 'all' && String(itemLen) !== len) return false;
-                return true;
-            });
-
-            filteredData.sort((a, b) => {
-                let av = a[sortKey], bv = b[sortKey];
-                if (sortKey === 'price') {
-                    av = parseFloat(a.price) || 0; bv = parseFloat(b.price) || 0;
-                    return sortDir === 'asc' ? av - bv : bv - av;
-                }
-                return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-            });
-
-            currentPage = 1;
-            render();
         }
 
         function render() {
-            const start = (currentPage - 1) * PAGE_SIZE;
-            const page = filteredData.slice(start, start + PAGE_SIZE);
-            const totalPages = Math.ceil(filteredData.length / PAGE_SIZE) || 1;
+            const tld = document.getElementById('filter-tld').value;
+            const tier = document.getElementById('filter-tier').value;
+            const sort = document.getElementById('filter-sort').value;
 
-            const tbody = document.getElementById('table-body');
-            if (page.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:40px;color:var(--text-secondary)">No available domains match.</td></tr>';
-            } else {
-                tbody.innerHTML = page.map(item => `<tr>
-                    <td><strong>${item.domain}</strong></td>
-                    <td class="price">${formatPrice(item)}</td>
-                </tr>`).join('');
-            }
-
-            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages} (${filteredData.length} results)`;
-            document.getElementById('btn-prev').disabled = currentPage <= 1;
-            document.getElementById('btn-next').disabled = currentPage >= totalPages;
-
-            document.querySelectorAll('th[data-sort]').forEach(th => {
-                const icon = th.querySelector('.sort-icon');
-                icon.textContent = th.dataset.sort === sortKey ? (sortDir === 'asc' ? '\u2191' : '\u2193') : '';
+            let filtered = allData.filter(item => {
+                const itemTld = item.domain.split('.').pop();
+                const itemTier = item.tier || 'standard';
+                if (tld !== 'all' && itemTld !== tld) return false;
+                if (tier !== 'all' && itemTier !== tier) return false;
+                return true;
             });
+
+            if (sort === 'price-asc') filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+            else if (sort === 'price-desc') filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+            else filtered.sort((a, b) => a.domain.localeCompare(b.domain));
+
+            const list = document.getElementById('domain-list');
+            if (filtered.length === 0) {
+                list.classList.add('empty');
+                list.innerHTML = '<div class="empty-state"><h3>No domains found</h3><p>No available domains match the current filters.</p></div>';
+                return;
+            }
+            list.classList.remove('empty');
+
+            list.innerHTML = filtered.map(item => {
+                const parts = item.domain.split('.');
+                const tierClass = item.tier === 'premium' ? 'premium' : 'standard';
+                const tierLabel = item.tier === 'premium' ? 'Premium' : 'Standard';
+                return `<div class="domain-card">
+                    <span class="domain-name">${parts[0]}<span class="tld">.${parts[1]}</span></span>
+                    <span class="price-tag">${formatPrice(item)}</span>
+                    <span class="tier-badge ${tierClass}">${tierLabel}</span>
+                </div>`;
+            }).join('');
         }
 
         async function init() {
-            const manifest = await loadManifest();
-            if (!manifest) {
-                document.getElementById('table-body').innerHTML =
-                    '<tr><td colspan="2"><div class="empty-state"><h3>No scan data yet</h3><p>Run the scanner to generate results.</p></div></td></tr>';
+            const data = await loadData();
+            if (!data) {
+                document.getElementById('domain-list').innerHTML =
+                    '<div class="empty-state"><h3>No scan data yet</h3><p>Run the scanner to generate results.</p></div>';
                 return;
             }
 
-            const data = await loadData(manifest.latest || 'domains.json');
             allData = data.results || [];
 
-            document.getElementById('stat-available').textContent = (allData.length).toLocaleString();
+            const standard = allData.filter(d => (d.tier || 'standard') === 'standard').length;
+            const premium = allData.filter(d => d.tier === 'premium').length;
+            document.getElementById('stat-standard').textContent = standard;
+            document.getElementById('stat-premium').textContent = premium;
 
-            const metaParts = [];
-            if (data.generatedAt) metaParts.push('Updated: ' + new Date(data.generatedAt).toLocaleString());
-            if (manifest.progress) metaParts.push(`Scanned ${manifest.progress.shardsDone}/${manifest.progress.shardsTotal} shards${manifest.progress.complete ? ' (complete)' : ''}`);
-            document.getElementById('meta').textContent = metaParts.join('  \u00B7  ');
+            if (data.generatedAt) {
+                const d = new Date(data.generatedAt);
+                document.getElementById('meta').textContent = d.toLocaleDateString();
+            }
 
             populateFilters(allData);
-            applyFilters();
+            render();
         }
 
-        document.getElementById('btn-query').addEventListener('click', applyFilters);
-        document.getElementById('btn-prev').addEventListener('click', () => { currentPage--; render(); });
-        document.getElementById('btn-next').addEventListener('click', () => { currentPage++; render(); });
-
-        document.querySelectorAll('th[data-sort]').forEach(th => {
-            th.addEventListener('click', () => {
-                const key = th.dataset.sort;
-                if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-                else { sortKey = key; sortDir = 'asc'; }
-                render();
-            });
-        });
+        document.getElementById('filter-tld').addEventListener('change', render);
+        document.getElementById('filter-tier').addEventListener('change', render);
+        document.getElementById('filter-sort').addEventListener('change', render);
 
         init();
     </script>
