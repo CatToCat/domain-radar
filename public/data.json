@@ -1,10 +1,37 @@
 {
-  "generatedAt": null,
-  "config": {},
+  "generatedAt": "2026-07-04T19:25:39.762Z",
+  "config": {
+    "sldMaxLength": 2,
+    "mode": "mixed",
+    "tldMaxLength": 2,
+    "tlds": [
+      "ai",
+      "ca",
+      "cc",
+      "co",
+      "fm",
+      "io",
+      "me",
+      "mx",
+      "nz",
+      "tv",
+      "uk",
+      "us"
+    ]
+  },
   "summary": {
-    "total": 0,
-    "available": { "total": 0, "standard": 0, "premium": 0 },
-    "unavailable": { "total": 0, "registered": 0, "other": 0, "error": 0 }
+    "total": 15926,
+    "available": {
+      "total": 0,
+      "standard": 0,
+      "premium": 0
+    },
+    "unavailable": {
+      "total": 15926,
+      "registered": 9691,
+      "other": 4468,
+      "error": 1767
+    }
   },
   "results": []
 }
