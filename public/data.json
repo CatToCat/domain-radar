@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-17T19:22:06.120Z",
+  "generatedAt": "2026-07-18T19:16:33.628Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15920,
+    "total": 15950,
     "available": {
       "total": 0,
       "standard": 0,
       "premium": 0
     },
     "unavailable": {
-      "total": 15920,
-      "registered": 9668,
-      "other": 4335,
-      "error": 1917
+      "total": 15950,
+      "registered": 9683,
+      "other": 4144,
+      "error": 2123
     }
   },
   "results": []
