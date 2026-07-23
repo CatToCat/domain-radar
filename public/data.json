@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-22T19:36:43.963Z",
+  "generatedAt": "2026-07-23T19:34:15.890Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15918,
+    "total": 15919,
     "available": {
-      "total": 94,
-      "standard": 94,
+      "total": 93,
+      "standard": 93,
       "premium": 0
     },
     "unavailable": {
-      "total": 15824,
-      "registered": 9689,
-      "other": 3393,
-      "error": 2742
+      "total": 15826,
+      "registered": 9695,
+      "other": 3423,
+      "error": 2708
     }
   },
   "results": [
@@ -402,12 +402,6 @@
     },
     {
       "domain": "j6.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "js.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
