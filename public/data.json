@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-02T19:25:14.204Z",
+  "generatedAt": "2026-08-03T19:50:49.704Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15946,
+    "total": 15928,
     "available": {
-      "total": 86,
-      "standard": 86,
+      "total": 84,
+      "standard": 84,
       "premium": 0
     },
     "unavailable": {
-      "total": 15860,
-      "registered": 9679,
-      "other": 3465,
-      "error": 2716
+      "total": 15844,
+      "registered": 9653,
+      "other": 4071,
+      "error": 2120
     }
   },
   "results": [
@@ -90,12 +90,6 @@
     },
     {
       "domain": "5h.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "5i.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
@@ -366,12 +360,6 @@
     },
     {
       "domain": "g7.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "i2.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
