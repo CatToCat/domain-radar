@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T00:16:03.601Z",
+  "generatedAt": "2026-08-07T19:10:51.652Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -365,12 +365,6 @@
       "tier": "standard"
     },
     {
-      "domain": "l4.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
       "domain": "l5.nz",
       "price": "15.60",
       "currency": "USD",
@@ -504,12 +498,6 @@
     },
     {
       "domain": "w9.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "y.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
