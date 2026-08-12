@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-11T19:14:52.501Z",
+  "generatedAt": "2026-08-12T19:15:56.528Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15934,
+    "total": 15921,
     "available": {
-      "total": 79,
-      "standard": 79,
+      "total": 78,
+      "standard": 78,
       "premium": 0
     },
     "unavailable": {
-      "total": 15855,
-      "registered": 9695,
-      "other": 4165,
-      "error": 1995
+      "total": 15843,
+      "registered": 9698,
+      "other": 3363,
+      "error": 2782
     }
   },
   "results": [
@@ -456,12 +456,6 @@
     },
     {
       "domain": "u9.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "ve.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
