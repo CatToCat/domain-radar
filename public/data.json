@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-12T19:15:56.528Z",
+  "generatedAt": "2026-08-13T19:15:12.950Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15921,
+    "total": 15932,
     "available": {
-      "total": 78,
-      "standard": 78,
+      "total": 79,
+      "standard": 79,
       "premium": 0
     },
     "unavailable": {
-      "total": 15843,
-      "registered": 9698,
-      "other": 3363,
-      "error": 2782
+      "total": 15853,
+      "registered": 9685,
+      "other": 3641,
+      "error": 2527
     }
   },
   "results": [
@@ -474,6 +474,12 @@
     },
     {
       "domain": "w9.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "y.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
