@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T21:14:20.612Z",
+  "generatedAt": "2026-09-18T20:45:40.410Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,28 +20,88 @@
     ]
   },
   "summary": {
-    "total": 15944,
+    "total": 15931,
     "available": {
-      "total": 11,
-      "standard": 11,
+      "total": 24,
+      "standard": 24,
       "premium": 0
     },
     "unavailable": {
-      "total": 15933,
-      "registered": 9756,
-      "other": 2846,
-      "error": 3331
+      "total": 15907,
+      "registered": 9781,
+      "other": 3254,
+      "error": 2872
     }
   },
   "results": [
     {
-      "domain": "9l.nz",
+      "domain": "3u.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "9o.nz",
+      "domain": "4h.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "4r.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "5h.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "5j.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "5o.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "5p.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "5v.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "5w.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "6i.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "6l.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "7p.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
@@ -77,25 +137,43 @@
       "tier": "standard"
     },
     {
-      "domain": "r9.nz",
+      "domain": "g5.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "t7.nz",
+      "domain": "g7.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "u5.nz",
+      "domain": "o4.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "u9.nz",
+      "domain": "o8.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "p5.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "p6.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "q4.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
