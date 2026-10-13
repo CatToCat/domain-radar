@@ -111695,7 +111695,56 @@
       "tld": "us",
       "status": "unavailable",
       "reason": "error"
+    },
+    {
+      "domain": "co.io",
+      "sld": "co",
+      "tld": "io",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ia.us",
+      "sld": "ia",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ri.us",
+      "sld": "ri",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "tn.us",
+      "sld": "tn",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "tx.us",
+      "sld": "tx",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "va.us",
+      "sld": "va",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "vt.us",
+      "sld": "vt",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
     }
   ],
-  "updatedAt": "2026-10-13T00:30:34.434Z"
+  "updatedAt": "2026-10-13T22:36:30.850Z"
 }
