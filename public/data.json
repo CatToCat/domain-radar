@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-11T21:50:04.584Z",
+  "generatedAt": "2026-10-13T00:30:34.446Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15929,
+    "total": 15942,
     "available": {
-      "total": 42,
-      "standard": 42,
+      "total": 41,
+      "standard": 41,
       "premium": 0
     },
     "unavailable": {
-      "total": 15887,
-      "registered": 9800,
-      "other": 4316,
-      "error": 1771
+      "total": 15901,
+      "registered": 9767,
+      "other": 3464,
+      "error": 2670
     }
   },
   "results": [
@@ -222,12 +222,6 @@
     },
     {
       "domain": "d2.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "d5.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
