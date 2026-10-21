@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T21:34:09.194Z",
+  "generatedAt": "2026-10-21T21:33:40.276Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -22,72 +22,18 @@
   "summary": {
     "total": 15935,
     "available": {
-      "total": 33,
-      "standard": 33,
+      "total": 22,
+      "standard": 22,
       "premium": 0
     },
     "unavailable": {
-      "total": 15902,
-      "registered": 9783,
-      "other": 3588,
-      "error": 2531
+      "total": 15913,
+      "registered": 9785,
+      "other": 3181,
+      "error": 2947
     }
   },
   "results": [
-    {
-      "domain": "3l.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "4h.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "5j.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "5o.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "5p.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "5w.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "6i.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "6j.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "6l.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
     {
       "domain": "6n.nz",
       "price": "15.60",
@@ -216,18 +162,6 @@
     },
     {
       "domain": "p6.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "u5.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "y3.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
