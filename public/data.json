@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T21:18:18.573Z",
+  "generatedAt": "2026-10-24T20:35:59.838Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,32 +20,20 @@
     ]
   },
   "summary": {
-    "total": 15936,
+    "total": 15945,
     "available": {
-      "total": 15,
-      "standard": 15,
+      "total": 16,
+      "standard": 16,
       "premium": 0
     },
     "unavailable": {
-      "total": 15921,
-      "registered": 9765,
-      "other": 3435,
-      "error": 2721
+      "total": 15929,
+      "registered": 9777,
+      "other": 3405,
+      "error": 2747
     }
   },
   "results": [
-    {
-      "domain": "3l.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "4h.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
     {
       "domain": "5j.nz",
       "price": "15.60",
@@ -53,37 +41,55 @@
       "tier": "standard"
     },
     {
-      "domain": "5o.nz",
+      "domain": "6w.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "5p.nz",
+      "domain": "7i.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "5w.nz",
+      "domain": "7l.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "6i.nz",
+      "domain": "7w.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "6j.nz",
+      "domain": "8o.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "7r.nz",
+      "domain": "8r.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8v.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8w.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "9l.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
