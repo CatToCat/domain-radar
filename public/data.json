@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T22:35:17.774Z",
+  "generatedAt": "2026-10-27T22:07:43.647Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15946,
+    "total": 15918,
     "available": {
-      "total": 16,
-      "standard": 16,
+      "total": 18,
+      "standard": 18,
       "premium": 0
     },
     "unavailable": {
-      "total": 15930,
-      "registered": 9778,
-      "other": 3131,
-      "error": 3021
+      "total": 15900,
+      "registered": 9775,
+      "other": 3818,
+      "error": 2307
     }
   },
   "results": [
@@ -65,19 +65,25 @@
       "tier": "standard"
     },
     {
+      "domain": "5w.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
       "domain": "6i.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "6l.nz",
+      "domain": "6j.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "6w.nz",
+      "domain": "6p.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
@@ -89,25 +95,19 @@
       "tier": "standard"
     },
     {
-      "domain": "7l.nz",
+      "domain": "7w.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8w.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
       "domain": "g7.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "j6.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "l5.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
@@ -126,6 +126,18 @@
     },
     {
       "domain": "p6.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "u5.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "y3.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
