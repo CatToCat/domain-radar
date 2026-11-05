@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T23:31:37.891Z",
+  "generatedAt": "2026-11-05T23:35:18.291Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,40 +20,88 @@
     ]
   },
   "summary": {
-    "total": 15931,
+    "total": 15923,
     "available": {
-      "total": 4,
-      "standard": 4,
+      "total": 12,
+      "standard": 12,
       "premium": 0
     },
     "unavailable": {
-      "total": 15927,
-      "registered": 9821,
-      "other": 3535,
-      "error": 2571
+      "total": 15911,
+      "registered": 9814,
+      "other": 3546,
+      "error": 2551
     }
   },
   "results": [
     {
-      "domain": "5p.nz",
+      "domain": "6j.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "l5.nz",
+      "domain": "6p.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "u5.nz",
+      "domain": "6w.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
     },
     {
-      "domain": "y3.nz",
+      "domain": "7i.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "7l.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "7y.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8o.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8r.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8v.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "8w.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "o4.nz",
+      "price": "15.60",
+      "currency": "USD",
+      "tier": "standard"
+    },
+    {
+      "domain": "p6.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
