@@ -111517,7 +111517,224 @@
       "tld": "us",
       "status": "unavailable",
       "reason": "error"
+    },
+    {
+      "domain": "dc.us",
+      "sld": "dc",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ga.us",
+      "sld": "ga",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "fl.us",
+      "sld": "fl",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "hi.us",
+      "sld": "hi",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "in.us",
+      "sld": "in",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ia.us",
+      "sld": "ia",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "il.us",
+      "sld": "il",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "id.us",
+      "sld": "id",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "la.us",
+      "sld": "la",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "mo.us",
+      "sld": "mo",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "mt.us",
+      "sld": "mt",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ms.us",
+      "sld": "ms",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "nd.us",
+      "sld": "nd",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ne.us",
+      "sld": "ne",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "nc.us",
+      "sld": "nc",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "nh.us",
+      "sld": "nh",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "nj.us",
+      "sld": "nj",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "oh.us",
+      "sld": "oh",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ok.us",
+      "sld": "ok",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "or.us",
+      "sld": "or",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "pa.us",
+      "sld": "pa",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "pr.us",
+      "sld": "pr",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "sd.us",
+      "sld": "sd",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "sc.us",
+      "sld": "sc",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "tn.us",
+      "sld": "tn",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ut.us",
+      "sld": "ut",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "vt.us",
+      "sld": "vt",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "wa.us",
+      "sld": "wa",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "wi.us",
+      "sld": "wi",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "wv.us",
+      "sld": "wv",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "wy.us",
+      "sld": "wy",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
     }
   ],
-  "updatedAt": "2026-11-12T00:21:40.547Z"
+  "updatedAt": "2026-11-12T23:29:05.570Z"
 }
