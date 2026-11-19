@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T00:52:35.470Z",
+  "generatedAt": "2026-11-19T00:10:32.781Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,40 +20,22 @@
     ]
   },
   "summary": {
-    "total": 15930,
+    "total": 15933,
     "available": {
       "total": 11,
       "standard": 11,
       "premium": 0
     },
     "unavailable": {
-      "total": 15919,
+      "total": 15922,
       "registered": 9799,
       "other": 3609,
-      "error": 2511
+      "error": 2514
     }
   },
   "results": [
     {
-      "domain": "3l.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
       "domain": "5j.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "6i.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "6j.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
@@ -65,19 +47,7 @@
       "tier": "standard"
     },
     {
-      "domain": "7i.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
       "domain": "7l.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "7y.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"

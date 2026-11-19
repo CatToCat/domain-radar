@@ -111551,7 +111551,28 @@
       "tld": "us",
       "status": "unavailable",
       "reason": "error"
+    },
+    {
+      "domain": "pa.us",
+      "sld": "pa",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "ri.us",
+      "sld": "ri",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "tn.us",
+      "sld": "tn",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
     }
   ],
-  "updatedAt": "2026-11-18T00:52:35.456Z"
+  "updatedAt": "2026-11-19T00:10:32.759Z"
 }
