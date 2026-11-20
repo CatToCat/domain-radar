@@ -111522,7 +111522,35 @@
       "tld": "us",
       "status": "unavailable",
       "reason": "error"
+    },
+    {
+      "domain": "pr.us",
+      "sld": "pr",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "va.us",
+      "sld": "va",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "vi.us",
+      "sld": "vi",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
+    },
+    {
+      "domain": "wi.us",
+      "sld": "wi",
+      "tld": "us",
+      "status": "unavailable",
+      "reason": "error"
     }
   ],
-  "updatedAt": "2026-11-20T00:33:40.960Z"
+  "updatedAt": "2026-11-20T23:59:10.421Z"
 }
