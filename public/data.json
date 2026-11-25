@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-24T04:05:47.747Z",
+  "generatedAt": "2026-11-25T02:09:09.094Z",
   "config": {
     "sldMaxLength": 2,
     "mode": "mixed",
@@ -20,17 +20,17 @@
     ]
   },
   "summary": {
-    "total": 15933,
+    "total": 15936,
     "available": {
-      "total": 10,
-      "standard": 10,
+      "total": 9,
+      "standard": 9,
       "premium": 0
     },
     "unavailable": {
-      "total": 15923,
-      "registered": 9182,
-      "other": 3845,
-      "error": 2896
+      "total": 15927,
+      "registered": 9835,
+      "other": 3052,
+      "error": 3040
     }
   },
   "results": [
@@ -72,12 +72,6 @@
     },
     {
       "domain": "7y.nz",
-      "price": "15.60",
-      "currency": "USD",
-      "tier": "standard"
-    },
-    {
-      "domain": "8o.nz",
       "price": "15.60",
       "currency": "USD",
       "tier": "standard"
